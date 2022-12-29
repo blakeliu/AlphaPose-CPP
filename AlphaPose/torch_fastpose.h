@@ -56,11 +56,14 @@ private:
 	float feat_stride[2] = {0.f, 0.f};
 
 private:
-	void transform(cv::Mat& mat_rs, at::Tensor& tensor_out);
 
 	void integral_op(at::Tensor& hm_1d);
 
 	void integral_tensor(at::Tensor& preds, types::Boxf cropped_box);
+
+	void crop_mat(const cv::Mat& input_mat, cv::Mat& crop_mat, types::Boxf& detected_box, types::Boxf& cropped_box);
+
+	void transform(cv::Mat& mat_rs, at::Tensor& tensor_out);
 
 	void generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, types::Landmarks& out_landmarks);
 

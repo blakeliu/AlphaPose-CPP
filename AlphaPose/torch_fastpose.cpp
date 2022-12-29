@@ -65,6 +65,19 @@ void FastPose::integral_tensor(at::Tensor& preds, types::Boxf cropped_box)
 {
 }
 
+void FastPose::crop_mat(const cv::Mat& input_mat, cv::Mat& crop_mat, types::Boxf& detected_box, types::Boxf& cropped_box)
+{
+	std::vector<float> center;
+	std::vector<float> scale;
+	std::vector<float> shift = { 0,0 };
+	utils::box_to_center_scale(detected_box, center, scale, aspect_ratio);
+
+	cv::Mat trans = utils::get_affine_transform(center, scale, shift, input_height, input_width, 0);
+	cv::warpAffine(input_mat, crop_mat, trans, cv::Size(input_width, input_height), cv::INTER_LINEAR);
+
+	utils::center_scale_to_box(center, scale, cropped_box);
+}
+
 void FastPose::generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, types::Landmarks& out_landmarks)
 {
 }
@@ -76,17 +89,15 @@ void FastPose::detect(const cv::Mat& mat, std::vector<types::Boxf>& detected_box
 		types::Boxf box = detected_boxes[i];
 		if (box.label == 0)
 		{
-			std::vector<float> center;
-			std::vector<float> scale;
 
-			// 1. crop box
 
-			utils::get_affine_transform();
+			// 1. crop box mat
 #ifdef POSE_DEBUG
 			utils::Timer crop_t;
 #endif // POSE_DEBUG
 			cv::Mat mat_rs;
 			types::Boxf cropped_box;
+			crop_mat(mat, mat_rs, box, cropped_box);
 #ifdef POSE_DEBUG
 			std::cout << "Crop person " << i << " box mat time: " << crop_t.count() << std::endl;
 #endif // POSE_DEBUG

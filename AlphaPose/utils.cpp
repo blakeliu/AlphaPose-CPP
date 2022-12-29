@@ -77,7 +77,7 @@ void utils::center_scale_to_box(std::vector<float>& center, std::vector<float>& 
 	box.y2 = y2;
 }
 
-cv::Mat utils::get_affine_transform(std::vector<float>& center, std::vector<float>& scale, std::vector<float>& shift, float output_h, float output_w, float rot = 0, bool inverse = false)
+cv::Mat utils::get_affine_transform(std::vector<float>& center, std::vector<float>& scale, std::vector<float>& shift, float output_h, float output_w, float rot, bool inverse)
 {
 	// rotate the point by rot degree
 	float rot_rad = rot * 1415926535 / 180;
