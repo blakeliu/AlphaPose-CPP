@@ -1,12 +1,12 @@
 #include <iostream>
 #include <filesystem>
 #include <chrono>
-#include "ort_yolox.h"
+//#include "ort_yolox.h"
 #include "utils.h"
+#include "alphapose.h"
 
-
-namespace fs = std::filesystem;
-
+#if 0
+//namespace fs = std::filesystem;
 static void test_onnxruntime()
 {
 	std::cout << "Current working directory: " << fs::current_path() << std::endl;
@@ -40,15 +40,38 @@ static void test_onnxruntime()
 	cv::waitKey(0);
 
 	delete yolox;
+}
+#endif
+
+
+void test_alpha_pose() {
+	std::string detector_param_path = "models/yolox_s.opt.param";
+	std::string detector_bin_path = "models/yolox_s.opt.bin";
+	std::string pose_weight_path = "models/multi_domain_fast50_regression_256x192-jit.pt";
+	unsigned int detector_num_threads = 1;
+	unsigned int pose_num_threads = 1;
+	float detector_score_threshold = 0.5;
+	float detector_iou_threshold = 0.6;
+	int pose_batch_size = 1;
+	int pose_num_joints = 136;
+
+	std::unique_ptr<AlphaPose> alpha_pose_model = std::make_unique<AlphaPose>(detector_param_path, detector_bin_path,
+		pose_weight_path, detector_num_threads, pose_num_threads, 
+		detector_score_threshold, detector_iou_threshold, pose_batch_size, pose_num_joints);
+
+	std::string input_file = "pics/1.jpg";
+	std::string output_file = "pics/1-out.jpg";
+
+	std::vector<types::BoxfWithLandmarks> person_lds;
+	cv::Mat image = cv::imread(input_file, cv::IMREAD_COLOR);
+	alpha_pose_model->detect(image, person_lds);
 
 
 
 }
 
-
 int main() {
 	std::cout << "Hello, AplhaPose!" << std::endl;
-
-	test_onnxruntime();
+	test_alpha_pose();
 	return 0;
 }

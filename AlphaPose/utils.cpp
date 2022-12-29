@@ -23,15 +23,30 @@ std::string utils::to_string(const std::wstring& wstr)
 	return str;
 }
 
-types::CenterScale<float> utils::box_to_center_scale(types::Boxf& box, float aspect_ratio, float scale_mult)
+void utils::normalize_inplace(cv::Mat& mat_inplace, const float* mean, const float* scale)
+{
+	if (mat_inplace.type() != CV_32FC3) mat_inplace.convertTo(mat_inplace, CV_32FC3);
+	for (unsigned int i = 0; i < mat_inplace.rows; ++i)
+	{
+		cv::Vec3f* p = mat_inplace.ptr<cv::Vec3f>(i);
+		for (unsigned int j = 0; j < mat_inplace.cols; ++j)
+		{
+			p[j][0] = (p[j][0] - mean[0]) * scale[0];
+			p[j][1] = (p[j][1] - mean[1]) * scale[1];
+			p[j][2] = (p[j][2] - mean[2]) * scale[2];
+		}
+	}
+}
+
+void utils::box_to_center_scale(types::Boxf& box, std::vector<float>& center, std::vector<float>& scale, float aspect_ratio, float scale_mult)
 {
 	float x = box.x1;
 	float y = box.y1;
 	float w = box.width();
 	float h = box.height();
 	float pixel_std = 1.0;
-	float center_x = x + w * 0.5;
-	float center_y = y + h * 0.5;
+	center[0] = x + w * 0.5f;
+	center[1] = y + h * 0.5f;
 	if (w > aspect_ratio * h) {
 		h = w / aspect_ratio;
 	}
@@ -39,27 +54,21 @@ types::CenterScale<float> utils::box_to_center_scale(types::Boxf& box, float asp
 	{
 		w = h * aspect_ratio;
 	}
-	float scale_w = w * 1.0 / pixel_std;
-	float scale_h = h * 1.0 / pixel_std;
-	if (center_x != -1) {
-		scale_w *= scale_mult;
-		scale_h *= scale_mult;
+	scale[0] = w * 1.0f / pixel_std;
+	scale[1] = h * 1.0f / pixel_std;
+	if (center[0] != -1) {
+		scale[0] *= scale_mult;
+		scale[1] *= scale_mult;
 	}
-	types::CenterScale<float> cs;
-	cs.center_x = center_x;
-	cs.center_y = center_y;
-	cs.scale_w = scale_w;
-	cs.scale_h = scale_h;
-	return cs;
 }
 
-void utils::center_scale_to_box(types::CenterScale<float>& cs, types::Boxf& box)
+void utils::center_scale_to_box(std::vector<float>& center, std::vector<float>& scale, types::Boxf& box)
 {
 	float pixel_std = 1.0;
-	float w = cs.scale_w * pixel_std;
-	float h = cs.scale_h * pixel_std;
-	float x1 = cs.center_x - w * 0.5;
-	float y1 = cs.center_y - h * 0.5;
+	float w = scale[0] * pixel_std;
+	float h = scale[1] * pixel_std;
+	float x1 = center[0] - w * 0.5;
+	float y1 = center[1] - h * 0.5;
 	float x2 = x1 + w;
 	float y2 = y1 + h;
 	box.x1 = x1;
@@ -68,42 +77,34 @@ void utils::center_scale_to_box(types::CenterScale<float>& cs, types::Boxf& box)
 	box.y2 = y2;
 }
 
-cv::Mat utils::get_affine_transform(types::CenterScale<float>& center_scale , float output_w, float output_h, float rot, float shift_x, float shift_y, bool inverse)
+cv::Mat utils::get_affine_transform(std::vector<float>& center, std::vector<float>& scale, std::vector<float>& shift, float output_h, float output_w, float rot = 0, bool inverse = false)
 {
 	// rotate the point by rot degree
-	float rot_rad = rot * 3.14159 / 180;
-	float sn = sin(rot_rad);
-	float cs = cos(rot_rad);
-
-	std::array<float, 2> src_point = {0, center_scale.scale_w * (-0.5)};
-	std::array<float, 2> dst_point = { 0, output_w * (-0.5) };
-
-	std::array<float, 2> src_rotate = { src_point[0] * cs - src_point[1] * sn, src_point[0] * sn - src_point[1] * cs };
+	float rot_rad = rot * 1415926535 / 180;
+	float src_w = scale[0];
+	std::vector<float> src_dir = get_dir(0, -0.5 * src_w, rot_rad);
+	std::vector<float> dst_dir{ 0.0, float(-0.5) * output_w };
 
 	cv::Point2f srcTri[3];
-	srcTri[0] = cv::Point2f(center_scale.center_x + center_scale.scale_w*shift_x, center_scale.center_y + center_scale.scale_h * shift_y);
-	srcTri[1] = cv::Point2f(center_scale.center_x + src_rotate[0] +center_scale.scale_w * shift_x,
-		center_scale.center_y + src_rotate[1] + center_scale.scale_h * shift_y);
-	std::array<float, 2> src_direct = { srcTri[0].x - srcTri[1].x, srcTri[0].y - srcTri[1].y };
-	srcTri[2] = cv::Point2f(srcTri[1].x + (-src_direct[1]), srcTri[1].y + (src_direct[0]));
+	srcTri[0] = cv::Point2f(center[0] + scale[0] * shift[0], center[1] + scale[1] * shift[1]);
+	srcTri[1] = cv::Point2f(center[0] + src_dir[0] + scale[0] * shift[0], center[1] + src_dir[1] + scale[1] * shift[1]);
+	srcTri[2] = get_3rd_point(srcTri[0], srcTri[1]);
 
 	cv::Point2f dstTri[3];
-	dstTri[0] = cv::Point2f(output_w*0.5, output_h*0.5);
-	dstTri[1] = cv::Point2f(dstTri[0].x + dst_point[0], dstTri[0].y + dst_point[1]);
-	std::array<float, 2> dst_direct = { dstTri[0].x - dstTri[1].x, dstTri[0].y - dstTri[1].y };
-	dstTri[2] = cv::Point2f(dstTri[1].x + (-dst_direct[1]), dstTri[1].y + (dst_direct[0]));
-
+	dstTri[0] = cv::Point2f(output_w * 0.5, output_h * 0.5);
+	dstTri[1] = cv::Point2f(output_w * 0.5 + dst_dir[0], output_h * 0.5 + dst_dir[1]);
+	dstTri[2] = get_3rd_point(dstTri[0], dstTri[1]);
+	cv::Mat warp_mat;
 	if (inverse)
 	{
-		cv::Mat warp_mat = getAffineTransform(dstTri, srcTri);
-		return warp_mat;
+		warp_mat = getAffineTransform(dstTri, srcTri);
 	}
 	else
 	{
-		cv::Mat warp_mat = getAffineTransform(srcTri, dstTri);
-		return warp_mat;
+		warp_mat = getAffineTransform(srcTri, dstTri);
 	}
-	
+	return warp_mat;
+
 }
 
 // draw functions

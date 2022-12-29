@@ -9,14 +9,6 @@
 
 namespace types
 {
-	template<typename T=float>
-	struct CenterScale {
-		typedef T value_type;
-		value_type center_x;
-		value_type center_y;
-		value_type scale_w;
-		value_type scale_h;
-	};
 
 	template<typename _T1 = float, typename _T2 = float>
 	static inline void __assert_type()
@@ -141,7 +133,7 @@ types::BoundingBoxType<T1, T2>::iou_of(const types::BoundingBoxType<O1, O2>& oth
 	value_type inner_h = inner_y2 - inner_y1 + static_cast<value_type>(1.0f);
 	value_type inner_w = inner_x2 - inner_x1 + static_cast<value_type>(1.0f);
 	if (inner_h <= static_cast<value_type>(0.f) || inner_w <= static_cast<value_type>(0.f))
-		return std::numeric_limits<value_type>::min();
+		return (std::numeric_limits<value_type>::min)();
 	value_type inner_area = inner_h * inner_w;
 	return static_cast<value_type>(inner_area / (area() + tbox.area() - inner_area));
 }

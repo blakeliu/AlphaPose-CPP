@@ -17,24 +17,53 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <limits>
+#include <chrono>
 #include <type_traits>
 #include "opencv2/opencv.hpp"
 #include "types.h"
 
 namespace utils
 {
+	class Timer {
+	public:
+		Timer() :
+			start(std::chrono::system_clock::now())
+		{};
+
+		float count(void) {
+			std::chrono::duration<double> duration = std::chrono::system_clock::now() - start;
+			return duration.count();
+		};
+	private:
+		std::chrono::time_point<std::chrono::system_clock> start;
+	};
 	std::wstring to_wstring(const std::string& str);
 
 	std::string to_string(const std::wstring& wstr);
 
-	//box(x1,y1,x2,y2) to cnter and scale
-	types::CenterScale<float> box_to_center_scale(types::Boxf& box, float aspect_ratio=1.0, float scale_mult=1.25);
+	void normalize_inplace(cv::Mat& mat_inplace, const float* mean, const float* scale);
+
+	//box(x1,y1,x2,y2) to center and scale
+	void box_to_center_scale(types::Boxf& box, std::vector<float>& center, std::vector<float>& scale, float aspect_ratio=1.0, float scale_mult=1.25);
 	
 	//cnter and scale to box(x1,y1,x2,y2)
-	void center_scale_to_box(types::CenterScale<float>& cs, types::Boxf & box);
+	void center_scale_to_box(std::vector<float>&center, std::vector<float>& scale, types::Boxf & box);
 
+	inline std::vector<float> get_dir(float src_point_x, float src_point_y, float rot_rad) {
+		float sn = sin(rot_rad);
+		float cs = cos(rot_rad);
+		std::vector<float> src_result{ 0.0,0.0 };
+		src_result[0] = src_point_x * cs - src_point_y * sn;
+		src_result[1] = src_point_x * sn + src_point_y * cs;
+		return src_result;
+	}
+	inline cv::Point2f get_3rd_point(cv::Point2f &a, cv::Point2f &b) {
+		float direction_0 = a.x - b.x;
+		float direction_1 = a.y - b.y;
+		return cv::Point2f{ b.x - direction_1, b.y + direction_0 };
+	}
 	//
-	cv::Mat get_affine_transform(types::CenterScale<float>& center_scale, float output_w, float output_h, float rot=0, float shift_x=0, float shift_y=0, bool inverse=false);
+	cv::Mat get_affine_transform(std::vector<float>& center, std::vector<float>& scale, std::vector<float>& shift, float output_h, float output_w,float rot=0, bool inverse=false);
 
 	// draw functions
 	void draw_landmarks_inplace(cv::Mat& mat, types::Landmarks& landmarks);

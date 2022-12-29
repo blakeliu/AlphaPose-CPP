@@ -15,25 +15,25 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AlphaPose.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ort_handler.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ort_yolox.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ort_utils.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="utils.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="ort_fastpose.cpp">
+    <ClCompile Include="ncnn_handler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ncnn_yolox.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ncnn_custom.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="alphapose.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="torch_fastpose.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,19 +47,22 @@
     <ClInclude Include="types.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="AlphaPose.h">
+    <ClInclude Include="ncnn_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ort_handler.h">
+    <ClInclude Include="ncnn_yolox.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ort_yolox.h">
+    <ClInclude Include="ncnn_custom.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ort_utils.h">
+    <ClInclude Include="alphapose.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ort_fastpose.h">
+    <ClInclude Include="torch_fastpose.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="clipp.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,7 +1,6 @@
 #ifndef ALPHAPOSE_HEADERS_H
 #define ALPHAPOSE_HEADERS_H
 
-#include "onnxruntime_cxx_api.h"
 #include "opencv2/opencv.hpp"
 
 #ifdef _WIN32
@@ -32,9 +31,9 @@
 #endif
 
 #ifdef ENABLE_DEBUG_STRING
-#define ORT_DEBUG 1
+#define POSE_DEBUG 1
 #else
-#define ORT_DEBUG 0
+#define POSE_DEBUG 0
 #endif
 
 #endif // !ALPHAPOSE

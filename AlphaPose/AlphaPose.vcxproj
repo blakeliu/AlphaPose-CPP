@@ -78,8 +78,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>D:\lib\opencv-4.6.0\build\x64\vc15\lib;D:\cv\project\onnx\onnxruntime-win-x64-1.11.1\lib;$(LibraryPath)</LibraryPath>
-    <IncludePath>D:\cv\project\onnx\onnxruntime-win-x64-1.11.1\include;D:\lib\opencv-4.6.0\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\lib\opencv-4.6.0\build\x64\vc15\lib;D:\lib\libtorch-1.13.1-cpu-debug\lib;D:\cv\project\ml\ncnn\build_debug\install\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\lib\libtorch-1.13.1-cpu-debug\include;D:\lib\opencv-4.6.0\build\include;D:\lib\libtorch-1.13.1-cpu-debug\include\torch\csrc\api\include;D:\cv\project\ml\ncnn\build_debug\install\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -120,14 +120,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;ENABLE_DEBUG_STRING;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\cv\project\onnx\onnxruntime-win-x64-1.11.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\cv\project\onnx\onnxruntime-win-x64-1.11.1\lib;D:\lib\opencv-4.6.0\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>onnxruntime.lib;opencv_world460d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_world460d.lib;c10.lib;libprotobufd.lib;torch.lib;torch_cpu.lib;ncnnd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -151,23 +151,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AlphaPose.cpp" />
+    <ClCompile Include="alphapose.cpp" />
+    <ClCompile Include="torch_fastpose.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="ort_fastpose.cpp" />
-    <ClCompile Include="ort_handler.cpp" />
-    <ClCompile Include="ort_yolox.cpp" />
-    <ClCompile Include="ort_utils.cpp" />
+    <ClCompile Include="ncnn_custom.cpp" />
+    <ClCompile Include="ncnn_handler.cpp" />
+    <ClCompile Include="ncnn_yolox.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AlphaPose.h" />
+    <ClInclude Include="alphapose.h" />
+    <ClInclude Include="clipp.h" />
     <ClInclude Include="headers.h" />
-    <ClInclude Include="ort_fastpose.h" />
-    <ClInclude Include="ort_handler.h" />
-    <ClInclude Include="ort_yolox.h" />
+    <ClInclude Include="torch_fastpose.h" />
+    <ClInclude Include="ncnn_custom.h" />
+    <ClInclude Include="ncnn_handler.h" />
+    <ClInclude Include="ncnn_yolox.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="utils.h" />
-    <ClInclude Include="ort_utils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="readme.md" />
