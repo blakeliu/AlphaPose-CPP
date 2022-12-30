@@ -53,22 +53,23 @@ private:
 	const float mean_vals[3] = { 255.f * 0.406f, 255.f * 0.457f, 255.f * 0.480f }; //bgr
 	const float norm_vals[3] = { 1.f / 255.f, 1.f / 255.f , 1.f / 255.f  };
 	float aspect_ratio = 0.f;
-	float feat_stride[2] = {0.f, 0.f};
+	float feat_stride[2] = {0.f, 0.f}; // h w
 
 private:
+	void transform(cv::Mat& mat_rs, at::Tensor& tensor_out);
 
 	void integral_op(at::Tensor& hm_1d);
 
-	void integral_tensor(at::Tensor& preds, types::Boxf cropped_box);
+	void integral_tensor(at::Tensor& preds, at::Tensor& pred_joints, at::Tensor& pred_scores, const int num_joints, const int hm_height, const int hm_width);
 
-	void crop_mat(const cv::Mat& input_mat, cv::Mat& crop_mat, types::Boxf& detected_box, types::Boxf& cropped_box);
+	void crop_image(const cv::Mat& input_mat, cv::Mat& crop_mat, types::Boxf& detected_box, types::Boxf& cropped_box);
 
-	void transform(cv::Mat& mat_rs, at::Tensor& tensor_out);
+	void transfrom_preds(at::Tensor& input_coord, std::vector<float>& output_coord, const std::vector<float>& center, const std::vector<float>& scale, const int hm_width, const int hm_height);
 
 	void generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, types::Landmarks& out_landmarks);
 
 public:
-	void detect(const cv::Mat& mat, std::vector<types::Boxf>& detected_boxes, std::vector<types::BoxfWithLandmarks>& person_lds);
+	void detect(const cv::Mat& image, std::vector<types::Boxf>& detected_boxes, std::vector<types::BoxfWithLandmarks>& person_lds);
 };
 
 #endif // !LIBTORCH_FAST_POSE_H

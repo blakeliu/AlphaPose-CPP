@@ -10,15 +10,6 @@
 
 class  NCNNYoloX : public BasicNCNNHandler
 {
-private:
-	ncnn::Net* net = nullptr;
-	const char* log_id = nullptr;
-	const char* param_path = nullptr;
-	const char* bin_path = nullptr;
-	std::vector<const char*> input_names;
-	std::vector<const char*> output_names;
-	std::vector<int> input_indexes;
-	std::vector<int> output_indexes;
 
 public:
 	explicit NCNNYoloX(const std::string& _param_path,
@@ -77,6 +68,9 @@ protected:
 	NCNNYoloX(NCNNYoloX&&) = delete; //
 	NCNNYoloX& operator=(const NCNNYoloX&) = delete; //
 	NCNNYoloX& operator=(NCNNYoloX&&) = delete; //
+
+protected:
+	virtual void initialize_handler();
 
 private:
 

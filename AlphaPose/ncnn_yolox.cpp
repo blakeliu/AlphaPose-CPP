@@ -16,23 +16,7 @@ NCNNYoloX::NCNNYoloX(const std::string &_param_path,
     BasicNCNNHandler(_param_path, _bin_path, _num_threads),
     input_height(_input_height), input_width(_input_width)
 {
-  net = new ncnn::Net();
-  // init net, change this setting for better performance.
-  net->opt.use_fp16_arithmetic = false;
-  net->opt.use_vulkan_compute = false; // default
-  // setup Focus in yolov5
-  net->register_custom_layer("YoloV5Focus", YoloV5Focus_layer_creator);
-  try
-  {
-      net->load_param(param_path);
-      net->load_model(bin_path);
-  }
-  catch (const std::exception& e)
-  {
-      std::string msg = e.what();
-      std::cerr << "NCNNYoloX load failed: " << msg << std::endl;
-      throw std::runtime_error(msg);
-  }
+    this->initialize_handler();
 #ifdef POSE_DEBUG
   this->print_debug_string();
 #endif
@@ -42,6 +26,27 @@ NCNNYoloX::~NCNNYoloX()
 {
   if (net) delete net;
   net = nullptr;
+}
+
+void NCNNYoloX::initialize_handler()
+{
+    net = new ncnn::Net();
+    // init net, change this setting for better performance.
+    net->opt.use_fp16_arithmetic = false;
+    net->opt.use_vulkan_compute = false; // default
+    // setup Focus in yolov5
+    net->register_custom_layer("YoloV5Focus", YoloV5Focus_layer_creator);
+    try
+    {
+        net->load_param(param_path);
+        net->load_model(bin_path);
+    }
+    catch (const std::exception& e)
+    {
+        std::string msg = e.what();
+        std::cerr << "NCNNYoloX load failed: " << msg << std::endl;
+        throw std::runtime_error(msg);
+    }
 }
 
 void NCNNYoloX::transform(const cv::Mat &mat_rs, ncnn::Mat &in)

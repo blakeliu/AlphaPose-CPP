@@ -49,7 +49,7 @@ namespace utils
 	//cnter and scale to box(x1,y1,x2,y2)
 	void center_scale_to_box(std::vector<float>&center, std::vector<float>& scale, types::Boxf & box);
 
-	inline std::vector<float> get_dir(float src_point_x, float src_point_y, float rot_rad) {
+	inline std::vector<float> get_dir(const float src_point_x, const float src_point_y, const float rot_rad) {
 		float sn = sin(rot_rad);
 		float cs = cos(rot_rad);
 		std::vector<float> src_result{ 0.0,0.0 };
@@ -62,8 +62,11 @@ namespace utils
 		float direction_1 = a.y - b.y;
 		return cv::Point2f{ b.x - direction_1, b.y + direction_0 };
 	}
+
+	void affine_tranform(const float x, const float y, cv::Mat& trans_mat, std::vector<float> out_pts);
+
 	//
-	cv::Mat get_affine_transform(std::vector<float>& center, std::vector<float>& scale, std::vector<float>& shift, float output_h, float output_w,float rot=0, bool inverse=false);
+	cv::Mat get_affine_transform(const std::vector<float>& center, const std::vector<float>& scale, const std::vector<float>& shift, const float output_h, const float output_w, const float rot=0, const bool inverse=false);
 
 	// draw functions
 	void draw_landmarks_inplace(cv::Mat& mat, types::Landmarks& landmarks);

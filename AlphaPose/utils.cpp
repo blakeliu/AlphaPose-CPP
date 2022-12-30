@@ -45,8 +45,8 @@ void utils::box_to_center_scale(types::Boxf& box, std::vector<float>& center, st
 	float w = box.width();
 	float h = box.height();
 	float pixel_std = 1.0;
-	center[0] = x + w * 0.5f;
-	center[1] = y + h * 0.5f;
+	center.push_back(x + w * 0.5f);
+	center.push_back(y + h * 0.5f);
 	if (w > aspect_ratio * h) {
 		h = w / aspect_ratio;
 	}
@@ -54,8 +54,8 @@ void utils::box_to_center_scale(types::Boxf& box, std::vector<float>& center, st
 	{
 		w = h * aspect_ratio;
 	}
-	scale[0] = w * 1.0f / pixel_std;
-	scale[1] = h * 1.0f / pixel_std;
+	scale.push_back(w * 1.0f / pixel_std);
+	scale.push_back(h * 1.0f / pixel_std);
 	if (center[0] != -1) {
 		scale[0] *= scale_mult;
 		scale[1] *= scale_mult;
@@ -77,10 +77,21 @@ void utils::center_scale_to_box(std::vector<float>& center, std::vector<float>& 
 	box.y2 = y2;
 }
 
-cv::Mat utils::get_affine_transform(std::vector<float>& center, std::vector<float>& scale, std::vector<float>& shift, float output_h, float output_w, float rot, bool inverse)
+void utils::affine_tranform(const float x, const float y, cv::Mat& trans_mat, std::vector<float> out_pts)
+{
+	float p[3] = { x, y, 1.0 };
+	cv::Mat mat_pt(3, 1, trans_mat.type(), p);
+	cv::Mat w = trans_mat * mat_pt;
+	float t_x = w.at<float>(0, 0);
+	float t_y = w.at<float>(0, 1);
+	out_pts.push_back(t_x);
+	out_pts.push_back(t_y);
+}
+
+cv::Mat utils::get_affine_transform(const std::vector<float>& center, const std::vector<float>& scale, const std::vector<float>& shift, const float output_h, const float output_w, const float rot, const bool inverse)
 {
 	// rotate the point by rot degree
-	float rot_rad = rot * 1415926535 / 180;
+	float rot_rad = rot * M_PI / 180;
 	float src_w = scale[0];
 	std::vector<float> src_dir = get_dir(0, -0.5 * src_w, rot_rad);
 	std::vector<float> dst_dir{ 0.0, float(-0.5) * output_w };

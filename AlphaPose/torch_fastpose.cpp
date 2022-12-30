@@ -1,12 +1,12 @@
 #include "torch_fastpose.h"
 #include "utils.h"
 
-FastPose::FastPose(const std::string& _weight_path, unsigned int _num_threads, 
+FastPose::FastPose(const std::string& _weight_path, unsigned int _num_threads,
 	int _batch_size, int _num_joints,
 	int _input_height, int _input_width,
 	int _heatmap_channel,
 	int _heatmap_height, int _heatmap_width
-	):
+) :
 	num_threads(_num_threads),
 	input_height(_input_height), input_width(_input_width),
 	batch_size(_batch_size), heatmap_channel(_heatmap_channel),
@@ -28,18 +28,18 @@ FastPose::FastPose(const std::string& _weight_path, unsigned int _num_threads,
 	_model->eval();
 
 #ifdef POSE_DEBUG
-	std::cout << "Init Inter-op num threads:" << at::get_num_interop_threads() << ", Intra-op num threads" << at::get_num_threads() << std::endl;
+	std::cout << "Init Inter-op num threads:" << at::get_num_interop_threads() << ", Intra-op num threads:" << at::get_num_threads() << std::endl;
 #endif // POSE_DEBUG
 	at::init_num_threads();
 	at::set_num_threads(num_threads);
 	at::set_num_interop_threads(num_threads);
 #ifdef POSE_DEBUG
-	std::cout << "Seted Inter-op num threads:" << at::get_num_interop_threads() << ", Intra-op num threads" << at::get_num_threads() << std::endl;
+	std::cout << "Set Inter-op num threads:" << at::get_num_interop_threads() << ", Intra-op num threads:" << at::get_num_threads() << std::endl;
 #endif // POSE_DEBUG
 
-	aspect_ratio = input_width / input_height;
-	feat_stride[0] = input_height / heatmap_height;
-	feat_stride[1] = input_width / heatmap_width;
+	aspect_ratio = static_cast<float>(input_width) / static_cast<float>(input_height);
+	feat_stride[0] = static_cast<float>(input_height) / static_cast<float>(heatmap_height);
+	feat_stride[1] = static_cast<float>(input_width) / static_cast<float>(heatmap_width);
 }
 
 FastPose::~FastPose()
@@ -56,20 +56,45 @@ void FastPose::transform(cv::Mat& mat_rs, at::Tensor& tensor_out)
 
 void FastPose::integral_op(at::Tensor& hm_1d)
 {
-	int feat_dim = hm_1d.size(1);
+	int feat_dim = hm_1d.size(-1);
 	at::Tensor range_tensor = at::arange(feat_dim, at::kFloat);
 	hm_1d *= range_tensor;
 }
 
-void FastPose::integral_tensor(at::Tensor& preds, types::Boxf cropped_box)
+void FastPose::integral_tensor(at::Tensor& preds, at::Tensor& pred_joints, at::Tensor& pred_scores, const int num_joints, const int hm_height, const int hm_width)
 {
+	int bs = preds.size(0);
+	int feat_dim = hm_height * hm_width;
+	preds = preds.reshape({ bs, num_joints, feat_dim });
+	preds = preds.sigmoid();
+
+	//get hm confidence
+	std::tuple<torch::Tensor, torch::Tensor> max_classes = torch::max(preds, 2, true);
+	pred_scores = std::get<0>(max_classes);
+
+	//norm to probabilty
+	auto heatmaps = preds / preds.sum(2, true);
+	heatmaps = heatmaps.reshape({ heatmaps.size(0), num_joints, 1, hm_height, hm_width });
+	// edge probablity
+	auto hm_x = heatmaps.sum({ 2, 3 });
+	auto hm_y = heatmaps.sum({ 2, 4 });
+	integral_op(hm_x);
+	integral_op(hm_y);
+	auto coord_x = hm_x.sum(2, true);
+	auto coord_y = hm_y.sum(2, true);
+	coord_x = coord_x / static_cast<float>(hm_width) - 0.5f;
+	coord_y = coord_y / static_cast<float>(hm_height) - 0.5f;
+
+	pred_joints = at::cat({ coord_x, coord_y }, 2);
+	pred_joints = pred_joints.reshape({ pred_joints.size(0), num_joints, 2 });
 }
 
-void FastPose::crop_mat(const cv::Mat& input_mat, cv::Mat& crop_mat, types::Boxf& detected_box, types::Boxf& cropped_box)
+
+void FastPose::crop_image(const cv::Mat& input_mat, cv::Mat& crop_mat, types::Boxf& detected_box, types::Boxf& cropped_box)
 {
-	std::vector<float> center;
-	std::vector<float> scale;
-	std::vector<float> shift = { 0,0 };
+	std::vector<float> center; // x y 
+	std::vector<float> scale; // w h
+	std::vector<float> shift = { 0.f, 0.f };
 	utils::box_to_center_scale(detected_box, center, scale, aspect_ratio);
 
 	cv::Mat trans = utils::get_affine_transform(center, scale, shift, input_height, input_width, 0);
@@ -78,28 +103,73 @@ void FastPose::crop_mat(const cv::Mat& input_mat, cv::Mat& crop_mat, types::Boxf
 	utils::center_scale_to_box(center, scale, cropped_box);
 }
 
-void FastPose::generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, types::Landmarks& out_landmarks)
+void FastPose::transfrom_preds(at::Tensor& input_coord, std::vector<float>& output_coord, const std::vector<float>& center, const std::vector<float>& scale, const int hm_width, const int hm_height)
 {
+#ifdef POSE_DEBUG
+	std::cout << "input_coord size: " << input_coord.sizes() << std::endl;
+#endif
+	const std::vector<float> shift = { 0.f, 0.f };
+	cv::Mat trans = utils::get_affine_transform(center, scale, shift, hm_height, hm_width, 0, true);
+	const float x = input_coord[0].item<float>();
+	const float y = input_coord[1].item<float>();
+	utils::affine_tranform(x, y, trans, output_coord);
 }
 
-void FastPose::detect(const cv::Mat& mat, std::vector<types::Boxf>& detected_boxes, std::vector<types::BoxfWithLandmarks>& person_lds)
+void FastPose::generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, types::Landmarks& out_landmarks)
+{
+	const int bs = heatmap.size(0);
+	const int hm_channel = heatmap.size(1);
+	const int hm_height = heatmap.size(2);
+	const int hm_width = heatmap.size(3);
+	at::Tensor pred_joints;
+	at::Tensor pred_scores;
+	integral_tensor(heatmap, pred_joints, pred_scores, num_joints, hm_height, hm_width);
+#ifdef POSE_DEBUG
+	std::cout << "pred_joints size: " << pred_joints.sizes() << std::endl;
+	std::cout << "pred_joints type: " << pred_joints.options()<< std::endl;
+	std::cout << "pred_scores size: " << pred_scores.sizes() << std::endl;
+	std::cout << "pred_scores type: " << pred_scores.options() << std::endl;
+#endif // POSE_DEBUG
+
+	pred_joints.index({ "...", 0 }) = (pred_joints.index({ "...", 0 }) + 0.5) * hm_width;
+	pred_joints.index({ "...", 1 }) = (pred_joints.index({ "...", 1 }) + 0.5) * hm_height;
+
+	at::Tensor trans_joints = at::zeros_like(pred_joints);
+	float w = cropped_box.width();
+	float h = cropped_box.height();
+	const std::vector<float> center = { cropped_box.x1 + w * 0.5f, cropped_box.y1 + h * 0.5f };
+	const std::vector<float> scale = { w, h };
+	for (size_t i = 0; i < trans_joints.size(0); i++)
+	{
+		for (size_t j = 0; j < trans_joints.size(1); j++)
+		{
+			std::vector<float> trans_pt;
+			at::Tensor pt_tensor = pred_joints[i][j];
+			transfrom_preds(pt_tensor, trans_pt, center, scale, hm_width, hm_height);
+			pred_joints[i][j][0] = trans_pt[0];
+			pred_joints[i][j][1] = trans_pt[1];
+		}
+	}
+}
+
+void FastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detected_boxes, std::vector<types::BoxfWithLandmarks>& person_lds)
 {
 	for (size_t i = 0; i < detected_boxes.size(); i++)
 	{
 		types::Boxf box = detected_boxes[i];
 		if (box.label == 0)
 		{
-
-
 			// 1. crop box mat
 #ifdef POSE_DEBUG
 			utils::Timer crop_t;
 #endif // POSE_DEBUG
-			cv::Mat mat_rs;
+			cv::Mat mat_person;
 			types::Boxf cropped_box;
-			crop_mat(mat, mat_rs, box, cropped_box);
+			crop_image(image, mat_person, box, cropped_box);
 #ifdef POSE_DEBUG
 			std::cout << "Crop person " << i << " box mat time: " << crop_t.count() << std::endl;
+			std::string p_name = std::string("person-") + std::to_string(person_lds.size()) + std::string(".jpg");
+			cv::imwrite(p_name, mat_person);
 #endif // POSE_DEBUG
 
 			// 2. make input tensor
@@ -107,7 +177,7 @@ void FastPose::detect(const cv::Mat& mat, std::vector<types::Boxf>& detected_box
 			utils::Timer trans_t;
 #endif // POSE_DEBUG
 			at::Tensor mat_tensor;
-			this->transform(mat_rs, mat_tensor);
+			this->transform(mat_person, mat_tensor);
 #ifdef POSE_DEBUG
 			std::cout << "Transform tensor " << i << " time: " << trans_t.count() << std::endl;
 #endif // POSE_DEBUG
@@ -133,10 +203,11 @@ void FastPose::detect(const cv::Mat& mat, std::vector<types::Boxf>& detected_box
 #ifdef POSE_DEBUG
 			std::cout << "Generate landmarks " << i << " time: " << gen_t.count() << std::endl;
 #endif // POSE_DEBUG
-			types::BoxfWithLandmarks person_box_lds;
-			person_box_lds.box = box;
-			person_box_lds.landmarks = pose_lds;
-			person_box_lds.flag = true;
+			types::BoxfWithLandmarks person_box_ld;
+			person_box_ld.box = box;
+			person_box_ld.landmarks = pose_lds;
+			person_box_ld.flag = true;
+			person_lds.push_back(person_box_ld);
 		}
 	}
 }
