@@ -38,7 +38,9 @@ private:
 	std::unique_ptr<FastPose> pose_model = nullptr;
 
 public:
-	void detect(cv::Mat& image, std::vector<types::BoxfWithLandmarks> person_lds);
+	void detect(cv::Mat& image, std::vector<types::BoxfWithLandmarks>& person_lds);
+
+	void warm_up(int count);
 };
 #endif // !ALPHA_POSE_H
 

@@ -47,6 +47,16 @@ void NCNNYoloX::initialize_handler()
         std::cerr << "NCNNYoloX load failed: " << msg << std::endl;
         throw std::runtime_error(msg);
     }
+    input_indexes = net->input_indexes();
+    output_indexes = net->output_indexes();
+#ifdef NCNN_STRING
+    input_names = net->input_names();
+    output_names = net->output_names();
+#endif
+    num_outputs = output_indexes.size();
+#ifdef POSE_DEBUG
+    this->print_debug_string();
+#endif
 }
 
 void NCNNYoloX::transform(const cv::Mat &mat_rs, ncnn::Mat &in)
@@ -119,6 +129,11 @@ void NCNNYoloX::detect(const cv::Mat &mat, std::vector<types::Boxf> &detected_bo
   this->generate_bboxes(scale_params, bbox_collection, extractor, score_threshold, img_height, img_width);
   // 4. hard|blend|offset nms with topk.
   this->nms(bbox_collection, detected_boxes, iou_threshold, topk, nms_type);
+}
+
+void NCNNYoloX::warm_up(int count)
+{
+    BasicNCNNHandler::base_warm_up(input_height, input_width, 3, count);
 }
 
 void NCNNYoloX::generate_anchors(const int target_height,

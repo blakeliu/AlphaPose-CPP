@@ -66,10 +66,19 @@ private:
 
 	void transfrom_preds(at::Tensor& input_coord, std::vector<float>& output_coord, const std::vector<float>& center, const std::vector<float>& scale, const int hm_width, const int hm_height);
 
+	/*
+	* pred_joints: [n, kp_num, 2]
+	* pred_scores: [n, kp_num, 1]
+	*/
+	void fast_nms_pose(at::Tensor& pred_joints, at::Tensor& pred_scores, at::Tensor& final_joints, at::Tensor& final_scores);
+
 	void generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, types::Landmarks& out_landmarks);
 
 public:
 	void detect(const cv::Mat& image, std::vector<types::Boxf>& detected_boxes, std::vector<types::BoxfWithLandmarks>& person_lds);
+
+	void warm_up(int count);
+
 };
 
 #endif // !LIBTORCH_FAST_POSE_H

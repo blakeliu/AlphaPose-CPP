@@ -105,14 +105,18 @@ void FastPose::crop_image(const cv::Mat& input_mat, cv::Mat& crop_mat, types::Bo
 
 void FastPose::transfrom_preds(at::Tensor& input_coord, std::vector<float>& output_coord, const std::vector<float>& center, const std::vector<float>& scale, const int hm_width, const int hm_height)
 {
-#ifdef POSE_DEBUG
-	std::cout << "input_coord size: " << input_coord.sizes() << std::endl;
-#endif
 	const std::vector<float> shift = { 0.f, 0.f };
 	cv::Mat trans = utils::get_affine_transform(center, scale, shift, hm_height, hm_width, 0, true);
 	const float x = input_coord[0].item<float>();
 	const float y = input_coord[1].item<float>();
 	utils::affine_tranform(x, y, trans, output_coord);
+}
+
+void FastPose::fast_nms_pose(at::Tensor& pred_joints, at::Tensor& pred_scores, at::Tensor& final_joints, at::Tensor& final_scores)
+{
+	at::Tensor normed_scores = pred_scores / at::sum(pred_scores, 0);
+	final_joints = at::mul(pred_joints, normed_scores.repeat({ 1, 1, 2 })).sum(0);
+	final_scores = at::mul(pred_scores, normed_scores).sum(0);
 }
 
 void FastPose::generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, types::Landmarks& out_landmarks)
@@ -150,6 +154,25 @@ void FastPose::generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, 
 			pred_joints[i][j][1] = trans_pt[1];
 		}
 	}
+
+	at::Tensor final_joints;
+	at::Tensor final_scores;
+	fast_nms_pose(pred_joints, pred_scores, final_joints, final_scores);
+#ifdef POSE_DEBUG
+	std::cout << "final_joints size: " << final_joints.sizes() << std::endl;
+	std::cout << "final_joints type: " << final_joints.options() << std::endl;
+	std::cout << "final_scores size: " << final_scores.sizes() << std::endl;
+	std::cout << "final_scores type: " << final_scores.options() << std::endl;
+#endif // POSE_DEBUG
+	std::vector<cv::Point2f> points;
+	for (size_t i = 0; i < final_joints.size(0); i++)
+	{
+		float x = final_joints[i][0].item<float>();
+		float y = final_joints[i][1].item<float>();
+		points.emplace_back(cv::Point2f(x, y));
+	}
+	out_landmarks.points = points;
+	out_landmarks.flag = true;
 }
 
 void FastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detected_boxes, std::vector<types::BoxfWithLandmarks>& person_lds)
@@ -209,5 +232,16 @@ void FastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detected_b
 			person_box_ld.flag = true;
 			person_lds.push_back(person_box_ld);
 		}
+	}
+}
+
+void FastPose::warm_up(int count)
+{
+	at::Tensor mat_tensor = at::rand({1, 3, input_height, input_width}).to(at::kFloat).to(at::kCPU);
+	std::vector<torch::jit::IValue> inputs;
+	inputs.emplace_back(mat_tensor);
+	for (size_t i = 0; i < count; i++)
+	{
+		at::Tensor heatmap = _model->forward(inputs).toTensor();
 	}
 }

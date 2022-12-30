@@ -77,15 +77,15 @@ void utils::center_scale_to_box(std::vector<float>& center, std::vector<float>& 
 	box.y2 = y2;
 }
 
-void utils::affine_tranform(const float x, const float y, cv::Mat& trans_mat, std::vector<float> out_pts)
+void utils::affine_tranform(const float x, const float y, cv::Mat& trans_mat, std::vector<float>& out_pts)
 {
-	float p[3] = { x, y, 1.0 };
+	double p[3] = { x, y, 1.0f };
 	cv::Mat mat_pt(3, 1, trans_mat.type(), p);
 	cv::Mat w = trans_mat * mat_pt;
-	float t_x = w.at<float>(0, 0);
-	float t_y = w.at<float>(0, 1);
-	out_pts.push_back(t_x);
-	out_pts.push_back(t_y);
+	double t_x = w.at<double>(0, 0);
+	double t_y = w.at<double>(1, 0);
+	out_pts.push_back(static_cast<float>(t_x));
+	out_pts.push_back(static_cast<float>(t_y));
 }
 
 cv::Mat utils::get_affine_transform(const std::vector<float>& center, const std::vector<float>& scale, const std::vector<float>& shift, const float output_h, const float output_w, const float rot, const bool inverse)
@@ -172,6 +172,161 @@ void utils::draw_boxes_with_landmarks_inplace(cv::Mat& mat_inplace, const std::v
 					cv::circle(mat_inplace, point, 2, cv::Scalar(0, 255, 0), -1);
 			}
 		}
+	}
+}
+
+void utils::draw_pose_box_with_landmasks(cv::Mat& mat_inplace, const std::vector<types::BoxfWithLandmarks>& boxes_kps, int num_joints)
+{
+	if (boxes_kps.empty()) return;
+	std::vector<std::array<int, 2>> l_pair;
+	std::vector<std::array<int, 3>> p_color;
+	std::vector<std::array<int, 3>> line_color;
+
+	int len_pair = 0;
+	int len_pcolor = 0;
+	int len_lcolor = 0;
+
+	if (num_joints == 136)
+	{
+		int _pair[][2] = {
+			{0, 1}, {0, 2}, {1, 3}, {2, 4},  // Head
+			{5, 18}, {6, 18}, {5, 7}, {7, 9}, {6, 8}, {8, 10},// Body
+			{17, 18}, {18, 19}, {19, 11}, {19, 12},
+			{11, 13}, {12, 14}, {13, 15}, {14, 16},
+			{20, 24}, {21, 25}, {23, 25}, {22, 24}, {15, 24}, {16, 25},// Foot
+			{26, 27},{27, 28},{28, 29},{29, 30},{30, 31},{31, 32},{32, 33},{33, 34},{34, 35},{35, 36},{36, 37},{37, 38},//Face
+			{38, 39},{39, 40},{40, 41},{41, 42},{43, 44},{44, 45},{45, 46},{46, 47},{48, 49},{49, 50},{50, 51},{51, 52},//Face
+			{53, 54},{54, 55},{55, 56},{57, 58},{58, 59},{59, 60},{60, 61},{62, 63},{63, 64},{64, 65},{65, 66},{66, 67},//Face
+			{68, 69},{69, 70},{70, 71},{71, 72},{72, 73},{74, 75},{75, 76},{76, 77},{77, 78},{78, 79},{79, 80},{80, 81},//Face
+			{81, 82},{82, 83},{83, 84},{84, 85},{85, 86},{86, 87},{87, 88},{88, 89},{89, 90},{90, 91},{91, 92},{92, 93},//Face
+			{94,95},{95,96},{96,97},{97,98},{94,99},{99,100},{100,101},{101,102},{94,103},{103,104},{104,105},//LeftHand
+			{105,106},{94,107},{107,108},{108,109},{109,110},{94,111},{111,112},{112,113},{113,114},//LeftHand
+			{115,116},{116,117},{117,118},{118,119},{115,120},{120,121},{121,122},{122,123},{115,124},{124,125},//RightHand
+			{125,126},{126,127},{115,128},{128,129},{129,130},{130,131},{115,132},{132,133},{133,134},{134,135}//RightHand
+		};
+		int _pcolor[][3] = { {0, 255, 255}, {0, 191, 255}, {0, 255, 102}, {0, 77, 255}, {0, 255, 0},  // Nose, LEye, REye, LEar, REar
+				   {77, 255, 255}, {77, 255, 204}, {77, 204, 255}, {191, 255, 77}, {77, 191, 255}, {191, 255, 77},  // LShoulder, RShoulder, LElbow, RElbow, LWrist, RWrist
+				   {204, 77, 255}, {77, 255, 204}, {191, 77, 255}, {77, 255, 191}, {127, 77, 255}, {77, 255, 127},  // LHip, RHip, LKnee, Rknee, LAnkle, RAnkle, Neck
+				   {77, 255, 255}, {0, 255, 255}, {77, 204, 255},  // head, neck, shoulder
+				   {0, 255, 255}, {0, 191, 255}, {0, 255, 102}, {0, 77, 255}, {0, 255, 0}, {77, 255, 255} }; // foot
+		int _lcolor[][3] = { {0, 215, 255}, {0, 255, 204}, {0, 134, 255}, {0, 255, 50},
+					  {0, 255, 102}, {77, 255, 222}, {77, 196, 255}, {77, 135, 255}, {191, 255, 77}, {77, 255, 77},
+					  {77, 191, 255}, {204, 77, 255}, {77, 222, 255}, {255, 156, 127},
+					  {0, 127, 255}, {255, 127, 77}, {0, 77, 255}, {255, 77, 36},
+					  {0, 77, 255}, {0, 77, 255}, {0, 77, 255}, {0, 77, 255}, {255, 156, 127}, {255, 156, 127} };
+
+		len_pair = sizeof(_pair) / sizeof(_pair[0]);
+		len_pcolor = sizeof(_pcolor) / sizeof(_pcolor[0]);
+		len_lcolor = sizeof(_lcolor) / sizeof(_lcolor[0]);
+		l_pair.reserve(len_pair);
+		p_color.reserve(len_pcolor);
+		line_color.reserve(len_lcolor);
+
+		for (auto& row : _pair) {
+			std::array<int, 2> p = { row[0], row[1] };
+			l_pair.push_back(p);
+		}
+		for (auto& row : _pcolor) {
+			std::array<int, 3> p = { row[0], row[1], row[2] };
+			p_color.push_back(p);
+		}
+		for (auto& row : _lcolor) {
+			std::array<int, 3> p = { row[0], row[1], row[2] };
+			line_color.push_back(p);
+		}
+	}
+	else if (num_joints == 26)
+	{
+		int _pair[][2] = {
+			{0, 1}, {0, 2}, {1, 3}, {2, 4},  // Head
+			{5, 18}, {6, 18}, {5, 7}, {7, 9}, {6, 8}, {8, 10},// Body
+			{17, 18}, {18, 19}, {19, 11}, {19, 12},
+			{11, 13}, {12, 14}, {13, 15}, {14, 16},
+			{20, 24}, {21, 25}, {23, 25}, {22, 24}, {15, 24}, {16, 25} }; // Foot
+		int _pcolor[][3] = { {0, 255, 255}, {0, 191, 255}, {0, 255, 102}, {0, 77, 255}, {0, 255, 0},  // Nose, LEye, REye, LEar, REar
+					{77, 255, 255}, {77, 255, 204}, {77, 204, 255}, {191, 255, 77}, {77, 191, 255}, {191, 255, 77},  // LShoulder, RShoulder, LElbow, RElbow, LWrist, RWrist
+					{204, 77, 255}, {77, 255, 204}, {191, 77, 255}, {77, 255, 191}, {127, 77, 255}, {77, 255, 127},  // LHip, RHip, LKnee, Rknee, LAnkle, RAnkle, Neck
+					{77, 255, 255}, {0, 255, 255}, {77, 204, 255},  // head, neck, shoulder
+					{0, 255, 255}, {0, 191, 255}, {0, 255, 102}, {0, 77, 255}, {0, 255, 0}, {77, 255, 255} }; // foot
+
+		int _lcolor[][3] = { {0, 215, 255}, {0, 255, 204}, {0, 134, 255}, {0, 255, 50},
+						{0, 255, 102}, {77, 255, 222}, {77, 196, 255}, {77, 135, 255}, {191, 255, 77}, {77, 255, 77},
+						{77, 191, 255}, {204, 77, 255}, {77, 222, 255}, {255, 156, 127},
+						{0, 127, 255}, {255, 127, 77}, {0, 77, 255}, {255, 77, 36},
+						{0, 77, 255}, {0, 77, 255}, {0, 77, 255}, {0, 77, 255}, {255, 156, 127}, {255, 156, 127} };
+		len_pair = sizeof(_pair) / sizeof(_pair[0]);
+		len_pcolor = sizeof(_pcolor) / sizeof(_pcolor[0]);
+		len_lcolor = sizeof(_lcolor) / sizeof(_lcolor[0]);
+		l_pair.reserve(len_pair);
+		p_color.reserve(len_pcolor);
+		line_color.reserve(len_lcolor);
+
+		for (auto& row : _pair) {
+			std::array<int, 2> p = { row[0], row[1] };
+			l_pair.push_back(p);
+		}
+		for (auto& row : _pcolor) {
+			std::array<int, 3> p = { row[0], row[1], row[2] };
+			p_color.push_back(p);
+		}
+		for (auto& row : _lcolor) {
+			std::array<int, 3> p = { row[0], row[1], row[2] };
+			line_color.push_back(p);
+		}
+	}
+	int h = mat_inplace.rows;
+	int w = mat_inplace.cols;
+	std::vector<std::array<int, 2>> part_line;
+	for (const auto& box_kps : boxes_kps)
+	{
+		cv::Scalar color = cv::Scalar(255, 0, 0);
+		cv::rectangle(mat_inplace, box_kps.box.rect(), color, 2); //draw box
+		for (size_t i = 0; i < box_kps.landmarks.points.size(); i++) //draw points
+		{
+			cv::Point2f p = box_kps.landmarks.points[i];
+			std::array<int, 2> _pl = { static_cast<int>(p.x), static_cast<int>(p.y) };
+			part_line.push_back(_pl);
+			if (i < len_pcolor)
+			{
+				cv::circle(mat_inplace, cv::Point(_pl[0], _pl[1]), 2, cv::Scalar(p_color[i][0], p_color[i][1], p_color[i][2]), -1);
+			}
+			else
+			{
+				cv::circle(mat_inplace, cv::Point(_pl[0], _pl[1]), 1, cv::Scalar(255, 255, 255), 2);
+			}
+			
+		}
+		int len_part_line = part_line.size();
+		for (size_t i = 0; i < l_pair.size(); i++)
+		{
+			int start_p = l_pair[i][0];
+			int end_p = l_pair[i][1];
+			if (start_p < len_part_line && end_p < len_part_line)
+			{
+				auto start_xy = part_line[start_p];
+				auto end_xy = part_line[end_p];
+				float X[2] = { start_xy[0], end_xy[0] };
+				float Y[2] = { start_xy[1], end_xy[1] };
+				float mX = (X[0] + X[1]) * 0.5f;
+				float mY = (Y[0] + Y[1]) * 0.5f;
+
+				float length = pow((pow(Y[0]- Y[1], 2) + pow(X[0]- X[1], 2)), 0.5);
+				float angle = atan2f(static_cast<double>(Y[0] - Y[1]), static_cast<double>(X[0] - X[1])) * 180.f / M_PI;
+
+				std::vector<cv::Point> polygon;
+				cv::ellipse2Poly(cv::Point(int(mX), int(mY)), cv::Size(int(length / 2), 1), int(angle), 0, 360, 1, polygon);
+				if (i < len_lcolor)
+				{
+					cv::fillConvexPoly(mat_inplace, polygon, cv::Scalar(line_color[i][0], line_color[i][1], line_color[i][2]));
+				}
+				else
+				{
+					cv::line(mat_inplace, cv::Point(start_xy[0], start_xy[1]), cv::Point(end_xy[0], end_xy[1]), cv::Scalar(255, 255, 255), 1);
+				}
+
+			}
+		}
+
 	}
 }
 

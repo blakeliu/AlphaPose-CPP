@@ -1,7 +1,7 @@
 #include "alphapose.h"
 
 AlphaPose::AlphaPose(const std::string& _detector_param_path, const std::string& _detector_bin_path, 
-	const std::string& _pose_weight_path, 
+	const std::string& _pose_weight_path,
 	unsigned int _detector_num_threads, unsigned int _pose_num_threads, 
 	float _detector_score_threshold, float _detector_iou_threshold, 
 	int _pose_batch_size, int _pose_num_joints): detector_param_path(_detector_param_path), detector_bin_path(_detector_bin_path), pose_weight_path(_pose_weight_path),
@@ -17,7 +17,15 @@ AlphaPose::~AlphaPose()
 {
 }
 
-void AlphaPose::detect(cv::Mat& image, std::vector<types::BoxfWithLandmarks> person_lds)
+void AlphaPose::warm_up(int count)
+{
+	yolo_model->warm_up(count);
+	pose_model->warm_up(count);
+}
+
+
+
+void AlphaPose::detect(cv::Mat& image, std::vector<types::BoxfWithLandmarks>& person_lds)
 {
 	std::vector<types::Boxf> detected_boxes;
 	yolo_model->detect(image, detected_boxes, detector_score_threshold, detector_iou_threshold);

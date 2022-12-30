@@ -27,7 +27,7 @@ void BasicNCNNHandler::initialize_handler()
       output_names = net->output_names();
     #endif
     num_outputs = output_indexes.size();
-    #ifdef LITENCNN_DEBUG
+    #ifdef POSE_DEBUG
       this->print_debug_string();
     #endif
 }

@@ -63,7 +63,7 @@ namespace utils
 		return cv::Point2f{ b.x - direction_1, b.y + direction_0 };
 	}
 
-	void affine_tranform(const float x, const float y, cv::Mat& trans_mat, std::vector<float> out_pts);
+	void affine_tranform(const float x, const float y, cv::Mat& trans_mat, std::vector<float>& out_pts);
 
 	//
 	cv::Mat get_affine_transform(const std::vector<float>& center, const std::vector<float>& scale, const std::vector<float>& shift, const float output_h, const float output_w, const float rot=0, const bool inverse=false);
@@ -73,9 +73,10 @@ namespace utils
 
 	void draw_boxes_inplace(cv::Mat& mat_inplace, const std::vector<types::Boxf>& boxes);
 
-
 	void draw_boxes_with_landmarks_inplace(cv::Mat& mat_inplace, const std::vector<types::BoxfWithLandmarks>& boxes_kps, bool text);
 
+	//draw haple pose(136) or haple pose(26)
+	void draw_pose_box_with_landmasks(cv::Mat& mat_inplace, const std::vector<types::BoxfWithLandmarks>& boxes_kps, int num_joints);
 
 	//softmax
 	std::vector<float> softmax(const float* logits, unsigned int _size, unsigned int& max_id);
