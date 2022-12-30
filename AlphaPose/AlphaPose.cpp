@@ -10,7 +10,7 @@ AlphaPose::AlphaPose(const std::string& _detector_param_path, const std::string&
 	pose_batch_size(_pose_batch_size), pose_num_joints(_pose_num_joints)
 {
 	yolo_model = std::make_unique<NCNNYoloX>(detector_param_path, detector_bin_path, detector_num_threads);
-	pose_model = std::make_unique<FastPose>(pose_weight_path, pose_num_threads);
+	pose_model = std::make_unique<FastPose>(pose_weight_path, pose_num_threads, 1, pose_num_joints);
 }
 
 AlphaPose::~AlphaPose()

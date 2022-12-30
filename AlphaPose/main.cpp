@@ -57,18 +57,22 @@ void test_alpha_pose_136() {
 	int pose_batch_size = 1;
 	int pose_num_joints = 136;
 
+	auto init_t = utils::Timer();
 	std::unique_ptr<AlphaPose> alpha_pose_model = std::make_unique<AlphaPose>(detector_param_path, detector_bin_path,
 		pose_weight_path, detector_num_threads, pose_num_threads, 
 		detector_score_threshold, detector_iou_threshold, pose_batch_size, pose_num_joints);
 
 	alpha_pose_model->warm_up(warmup_count);
+	std::cout << "AlphaPose model load and init time: " << init_t.count() << std::endl;
 
 	std::string input_file = "pics/1.jpg";
 	std::string output_file = "pics/1-136-out.jpg";
 
-	std::vector<types::BoxfWithLandmarks> person_lds;
 	cv::Mat image = cv::imread(input_file, cv::IMREAD_COLOR);
+	auto infer_t = utils::Timer();
+	std::vector<types::BoxfWithLandmarks> person_lds;
 	alpha_pose_model->detect(image, person_lds);
+	std::cout << "AlphaPose model infer time: " << infer_t.count() << std::endl;
 
 	cv::Mat show_img = image.clone();
 	utils::draw_pose_box_with_landmasks(show_img, person_lds, pose_num_joints);
@@ -87,18 +91,22 @@ void test_alpha_pose_26() {
 	int pose_batch_size = 1;
 	int pose_num_joints = 26;
 
+	auto init_t = utils::Timer();
 	std::unique_ptr<AlphaPose> alpha_pose_model = std::make_unique<AlphaPose>(detector_param_path, detector_bin_path,
 		pose_weight_path, detector_num_threads, pose_num_threads,
 		detector_score_threshold, detector_iou_threshold, pose_batch_size, pose_num_joints);
 
 	alpha_pose_model->warm_up(warmup_count);
+	std::cout << "AlphaPose model load and init time: " << init_t.count() << std::endl;
 
 	std::string input_file = "pics/1.jpg";
 	std::string output_file = "pics/1-26-out.jpg";
 
-	std::vector<types::BoxfWithLandmarks> person_lds;
 	cv::Mat image = cv::imread(input_file, cv::IMREAD_COLOR);
+	auto infer_t = utils::Timer();
+	std::vector<types::BoxfWithLandmarks> person_lds;
 	alpha_pose_model->detect(image, person_lds);
+	std::cout << "AlphaPose model infer time: " << infer_t.count() << std::endl;
 
 	cv::Mat show_img = image.clone();
 	utils::draw_pose_box_with_landmasks(show_img, person_lds, pose_num_joints);
@@ -128,6 +136,7 @@ int cli(int argc, char* argv[]) {
 		clipp::option("-o", "--output") & clipp::value("save result image", output_file),
 		clipp::option("-dt", "--detector_num_threads") & clipp::value("set number of detector_num_threads", detector_num_threads),
 		clipp::option("-pt", "--pose_num_threads") & clipp::value("set number of pose_num_threads", pose_num_threads),
+		clipp::option("-wc", "--warmup_count") & clipp::value("set number of warmup_count", warmup_count),
 		clipp::option("-pj", "--pose_joints") & clipp::value("set number of pose_joints", pose_num_joints),
 		clipp::option("-h", "--help").set(help).doc("help")
 		);
@@ -141,11 +150,31 @@ int cli(int argc, char* argv[]) {
 		return 0;
 	}
 
+	
+	auto init_t = utils::Timer();
+	std::unique_ptr<AlphaPose> alpha_pose_model = std::make_unique<AlphaPose>(detector_param_path, detector_bin_path,
+		pose_weight_path, detector_num_threads, pose_num_threads,
+		detector_score_threshold, detector_iou_threshold, pose_batch_size, pose_num_joints);
+
+	alpha_pose_model->warm_up(warmup_count);
+	std::cout << "AlphaPose model load and init time: " << init_t.count() << std::endl;
+
+	cv::Mat image = cv::imread(input_file, cv::IMREAD_COLOR);
+	auto infer_t = utils::Timer();
+	std::vector<types::BoxfWithLandmarks> person_lds;
+	alpha_pose_model->detect(image, person_lds);
+	std::cout << "AlphaPose model infer time: " << infer_t.count() << std::endl;
+
+	cv::Mat show_img = image.clone();
+	utils::draw_pose_box_with_landmasks(show_img, person_lds, pose_num_joints);
+	cv::imwrite(output_file, show_img);
+	return 0;
 }
 
 int main(int argc, char* argv[]) {
 	std::cout << "Hello, AplhaPose!" << std::endl;
-	test_alpha_pose_136();
+	//test_alpha_pose_136();
 	test_alpha_pose_26();
+	//cli(argc, argv);
 	return 0;
 }

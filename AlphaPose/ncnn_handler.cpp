@@ -22,14 +22,14 @@ void BasicNCNNHandler::initialize_handler()
     net->load_model(bin_path);
     input_indexes = net->input_indexes();
     output_indexes = net->output_indexes();
-    #ifdef NCNN_STRING
-      input_names = net->input_names();
-      output_names = net->output_names();
-    #endif
+ #ifdef NCNN_STRING
+    input_names = net->input_names();
+    output_names = net->output_names();
+ #endif
     num_outputs = output_indexes.size();
-    #ifdef POSE_DEBUG
-      this->print_debug_string();
-    #endif
+#ifdef POSE_DEBUG
+    this->print_debug_string();
+#endif
 }
 
 BasicNCNNHandler::~BasicNCNNHandler()
@@ -79,11 +79,13 @@ void BasicNCNNHandler::base_warm_up(int _height, int _width, int _channel, int w
     in.fill(0.01f);
     ncnn::Mat out;
     if (net != nullptr){
+        const std::vector<const char*>& net_input_names = net->input_names();
+        const std::vector<const char*>& net_output_names = net->output_names();
         for (int i=0;i< warmup_count; i++){
             ncnn::Extractor ex = net->create_extractor();
             #ifdef NCNN_STRING
-            ex.input(input_names[0], in);
-            ex.extract(output_names[0], out);
+            ex.input(net_input_names[0], in);
+            ex.extract(net_output_names[0], out);
             #else
             std::cout << "NCNN_STRING=0, can't available input_names and output_names!" << std::endl;
             #endif

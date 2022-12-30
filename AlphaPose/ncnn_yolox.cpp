@@ -17,9 +17,6 @@ NCNNYoloX::NCNNYoloX(const std::string &_param_path,
     input_height(_input_height), input_width(_input_width)
 {
     this->initialize_handler();
-#ifdef POSE_DEBUG
-  this->print_debug_string();
-#endif
 }
 
 NCNNYoloX::~NCNNYoloX()
