@@ -66,13 +66,19 @@ private:
 
 	void transfrom_preds(at::Tensor& input_coord, std::vector<float>& output_coord, const std::vector<float>& center, const std::vector<float>& scale, const int hm_width, const int hm_height);
 
+	void get_max_pred(at::Tensor& heatmap, at::Tensor& preds, at::Tensor& maxvals);
+
 	/*
 	* pred_joints: [n, kp_num, 2]
 	* pred_scores: [n, kp_num, 1]
 	*/
 	void fast_nms_pose(at::Tensor& pred_joints, at::Tensor& pred_scores, at::Tensor& final_joints, at::Tensor& final_scores);
 
-	void generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, types::Landmarks& out_landmarks);
+	//halpe 136
+	void heatmap_to_coord_simple_regress(at::Tensor& heatmap, types::Boxf& cropped_box, types::Landmarks& out_landmarks);
+	
+	//halpe 24
+	void heatmap_to_coord_simple(at::Tensor& heatmap, types::Boxf& cropped_box, types::Landmarks& out_landmarks);
 
 public:
 	void detect(const cv::Mat& image, std::vector<types::Boxf>& detected_boxes, std::vector<types::BoxfWithLandmarks>& person_lds);

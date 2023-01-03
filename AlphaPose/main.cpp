@@ -172,9 +172,9 @@ int cli(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-	std::cout << "Hello, AplhaPose!" << std::endl;
+	std::cout << "Hello, AlphaPose!" << std::endl;
 	//test_alpha_pose_136();
-	test_alpha_pose_26();
-	//cli(argc, argv);
+	//test_alpha_pose_26();
+	cli(argc, argv);
 	return 0;
 }

@@ -238,7 +238,7 @@ void NCNNYoloX::generate_bboxes(const YoloXScaleParams &scale_params,
     if (count > max_nms)
       break;
   }
-#if POSE_DEBUG
+#ifdef POSE_DEBUG
   std::cout << "detected num_anchors: " << num_anchors << "\n";
   std::cout << "generate_bboxes num: " << bbox_collection.size() << "\n";
 #endif

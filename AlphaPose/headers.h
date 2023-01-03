@@ -24,10 +24,17 @@
 #endif
 
 #ifdef ENABLE_DEBUG_STRING
-#define POSE_DEBUG 1
+#define POSE_DEBUG
 #else
-#define POSE_DEBUG 0
+#undef POSE_DEBUG
 #endif
+
+#ifdef ENABLE_TIMER
+#define POSE_TIMER
+#else
+#undef POSE_TIMER
+#endif // ENABLE_TIMER
+
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)

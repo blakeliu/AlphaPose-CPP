@@ -112,6 +112,28 @@ void FastPose::transfrom_preds(at::Tensor& input_coord, std::vector<float>& outp
 	utils::affine_tranform(x, y, trans, output_coord);
 }
 
+void FastPose::get_max_pred(at::Tensor& heatmap, at::Tensor& preds, at::Tensor& maxvals)
+{
+	int hm_jonts_num = heatmap.size(0);
+	int hm_height = heatmap.size(1);
+	int hm_width = heatmap.size(2);
+
+	at::Tensor reshap_hm = heatmap.reshape({ hm_jonts_num, -1 });
+	std::tuple<torch::Tensor, torch::Tensor> max_classes = at::max(reshap_hm, 1);
+	maxvals = std::get<0>(max_classes);
+	at::Tensor idx = at::argmax(reshap_hm, 1);
+
+	maxvals = maxvals.reshape({ hm_jonts_num, 1 });
+	idx = idx.reshape({ hm_jonts_num, 1 });
+
+	preds = at::tile(idx, { 1, 2 }).to(at::kFloat);
+	preds.index({ "...", 0 }) = preds.index({ "...", 0 }) % hm_width;
+	preds.index({ "...", 1 }) = at::floor(preds.index({ "...", 1 }) / hm_width);
+	at::Tensor pred_mask = at::tile(at::greater(maxvals, 0.f), { 1, 2 }).to(at::kFloat);
+
+	preds *= pred_mask;
+}
+
 void FastPose::fast_nms_pose(at::Tensor& pred_joints, at::Tensor& pred_scores, at::Tensor& final_joints, at::Tensor& final_scores)
 {
 	at::Tensor normed_scores = pred_scores / at::sum(pred_scores, 0);
@@ -119,7 +141,7 @@ void FastPose::fast_nms_pose(at::Tensor& pred_joints, at::Tensor& pred_scores, a
 	final_scores = at::mul(pred_scores, normed_scores).sum(0);
 }
 
-void FastPose::generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, types::Landmarks& out_landmarks)
+void FastPose::heatmap_to_coord_simple_regress(at::Tensor& heatmap, types::Boxf& cropped_box, types::Landmarks& out_landmarks)
 {
 	const int bs = heatmap.size(0);
 	const int hm_channel = heatmap.size(1);
@@ -127,25 +149,24 @@ void FastPose::generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, 
 	const int hm_width = heatmap.size(3);
 	at::Tensor pred_joints;
 	at::Tensor pred_scores;
+	//post-processing
 	integral_tensor(heatmap, pred_joints, pred_scores, num_joints, hm_height, hm_width);
 #ifdef POSE_DEBUG
 	std::cout << "pred_joints size: " << pred_joints.sizes() << std::endl;
-	std::cout << "pred_joints type: " << pred_joints.options()<< std::endl;
 	std::cout << "pred_scores size: " << pred_scores.sizes() << std::endl;
-	std::cout << "pred_scores type: " << pred_scores.options() << std::endl;
 #endif // POSE_DEBUG
 
 	pred_joints.index({ "...", 0 }) = (pred_joints.index({ "...", 0 }) + 0.5) * hm_width;
 	pred_joints.index({ "...", 1 }) = (pred_joints.index({ "...", 1 }) + 0.5) * hm_height;
 
-	at::Tensor trans_joints = at::zeros_like(pred_joints);
+	//at::Tensor trans_joints = at::zeros_like(pred_joints);	
 	float w = cropped_box.width();
 	float h = cropped_box.height();
 	const std::vector<float> center = { cropped_box.x1 + w * 0.5f, cropped_box.y1 + h * 0.5f };
 	const std::vector<float> scale = { w, h };
-	for (size_t i = 0; i < trans_joints.size(0); i++)
+	for (size_t i = 0; i < pred_joints.size(0); i++)
 	{
-		for (size_t j = 0; j < trans_joints.size(1); j++)
+		for (size_t j = 0; j < pred_joints.size(1); j++)
 		{
 			std::vector<float> trans_pt;
 			at::Tensor pt_tensor = pred_joints[i][j];
@@ -160,9 +181,7 @@ void FastPose::generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, 
 	fast_nms_pose(pred_joints, pred_scores, final_joints, final_scores);
 #ifdef POSE_DEBUG
 	std::cout << "final_joints size: " << final_joints.sizes() << std::endl;
-	std::cout << "final_joints type: " << final_joints.options() << std::endl;
 	std::cout << "final_scores size: " << final_scores.sizes() << std::endl;
-	std::cout << "final_scores type: " << final_scores.options() << std::endl;
 #endif // POSE_DEBUG
 	std::vector<cv::Point2f> points;
 	for (size_t i = 0; i < final_joints.size(0); i++)
@@ -175,6 +194,85 @@ void FastPose::generate_landmarks(at::Tensor& heatmap, types::Boxf cropped_box, 
 	out_landmarks.flag = true;
 }
 
+void FastPose::heatmap_to_coord_simple(at::Tensor& heatmap, types::Boxf& cropped_box, types::Landmarks& out_landmarks)
+{
+	at::Tensor pred_joints, pred_scores;
+	at::Tensor hms = heatmap[0]; //bs = 1
+
+	get_max_pred(hms, pred_joints, pred_scores);
+#ifdef POSE_DEBUG
+	std::cout << "pred_joints size: " << pred_joints.sizes() << std::endl;
+	std::cout << "pred_scores size: " << pred_scores.sizes() << std::endl;
+#endif // POSE_DEBUG
+
+	int hm_channel = hms.size(0);
+	int hm_height = hms.size(1);
+	int hm_width = hms.size(2);
+
+	//post-processing
+	for (size_t i = 0; i < pred_joints.size(0); i++)
+	{
+		at::Tensor hm = hms[i];
+		int px = static_cast<int>(std::round(pred_joints[i][0].item<float>()));
+		int py = static_cast<int>(std::round(pred_joints[i][1].item<float>()));
+
+		px = (std::max)((std::min)(px, (int)(hm_width - 1)), 0);
+		py = (std::max)((std::min)(py, (int)(hm_height - 1)), 0);
+		if (px > 1 && px < hm_width - 1 && py > 1 && px < hm_height - 1)
+		{
+			int px_add = px + 1;
+			int py_add = py + 1;
+			int px_sub = px - 1;
+			int py_sub = py - 1;
+			float diff_x = hm[py][px_add].item<float>() - hm[py][px_sub].item<float>();
+			float diff_y = hm[py_add][px].item<float>() - hm[py_sub][px].item<float>();
+
+			pred_joints[i][0] += diff_x == 0 ? 0 : (diff_x > 0) ? 0.25f : -0.25f;
+			pred_joints[i][1] += diff_y == 0 ? 0 : (diff_y > 0) ? 0.25f : -0.25f;
+		}
+	}
+
+	//transform box to scale
+	float w = cropped_box.width();
+	float h = cropped_box.height();
+	const std::vector<float> center = { cropped_box.x1 + w * 0.5f, cropped_box.y1 + h * 0.5f };
+	const std::vector<float> scale = { w, h };
+	for (size_t i = 0; i < pred_joints.size(0); i++)
+	{
+		//for (size_t j = 0; j < coords.size(1); j++)
+		//{
+		std::vector<float> trans_pt;
+		at::Tensor pt_tensor = pred_joints[i];
+		transfrom_preds(pt_tensor, trans_pt, center, scale, hm_width, hm_height);
+		pred_joints[i][0] = trans_pt[0];
+		pred_joints[i][1] = trans_pt[1];
+		//}
+	}
+	at::Tensor final_joints;
+	at::Tensor final_scores;
+	pred_joints = pred_joints.unsqueeze_(0);
+	pred_scores = pred_scores.unsqueeze_(0);
+#ifdef POSE_DEBUG
+	std::cout << "pred_joints size: " << pred_joints.sizes() << std::endl;
+	std::cout << "pred_scores size: " << pred_scores.sizes() << std::endl;
+#endif // POSE_DEBUG
+	fast_nms_pose(pred_joints, pred_scores, final_joints, final_scores);
+#ifdef POSE_DEBUG
+	std::cout << "final_joints size: " << final_joints.sizes() << std::endl;
+	std::cout << "final_scores size: " << final_scores.sizes() << std::endl;
+#endif // POSE_DEBUG
+	std::vector<cv::Point2f> points;
+	for (size_t i = 0; i < final_joints.size(0); i++)
+	{
+		float x = final_joints[i][0].item<float>();
+		float y = final_joints[i][1].item<float>();
+		points.emplace_back(cv::Point2f(x, y));
+	}
+	out_landmarks.points = points;
+	out_landmarks.flag = true;
+
+}
+
 void FastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detected_boxes, std::vector<types::BoxfWithLandmarks>& person_lds)
 {
 	for (size_t i = 0; i < detected_boxes.size(); i++)
@@ -183,49 +281,60 @@ void FastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detected_b
 		if (box.label == 0)
 		{
 			// 1. crop box mat
-#ifdef POSE_DEBUG
-			utils::Timer crop_t;
-#endif // POSE_DEBUG
+#ifdef POSE_TIMER
+			utils::Timer pre_t;
+#endif // POSE_TIMER
 			cv::Mat mat_person;
 			types::Boxf cropped_box;
 			crop_image(image, mat_person, box, cropped_box);
 #ifdef POSE_DEBUG
-			std::cout << "Crop person " << i << " box mat time: " << crop_t.count() << std::endl;
 			std::string p_name = std::string("person-") + std::to_string(person_lds.size()) + std::string(".jpg");
 			cv::imwrite(p_name, mat_person);
 #endif // POSE_DEBUG
 
 			// 2. make input tensor
-#ifdef POSE_DEBUG
-			utils::Timer trans_t;
-#endif // POSE_DEBUG
 			at::Tensor mat_tensor;
 			this->transform(mat_person, mat_tensor);
-#ifdef POSE_DEBUG
-			std::cout << "Transform tensor " << i << " time: " << trans_t.count() << std::endl;
-#endif // POSE_DEBUG
+#ifdef POSE_TIMER
+			std::cout << "Preprocessed image tensor " << i << " time: " << pre_t.count() << std::endl;
+#endif // POSE_TIMER
 
 			// 3. forward
-#ifdef POSE_DEBUG
+#ifdef POSE_TIMER
 			utils::Timer forward_t;
-#endif // POSE_DEBUG
+#endif // POSE_TIMER
 			std::vector<torch::jit::IValue> inputs;
 			inputs.emplace_back(mat_tensor);
 			at::Tensor heatmap = _model->forward(inputs).toTensor();
+#ifdef POSE_TIMER
+			std::cout << "Torch fastpose forward " << i << " time: " << forward_t.count() << std::endl;
+#endif // POSE_TIMER
 #ifdef POSE_DEBUG
-			std::cout << "Torch forward " << i << " time: " << forward_t.count() << std::endl;
 			std::cout << "heatmap size: " << heatmap.sizes() << std::endl;
 #endif // POSE_DEBUG
 
 			// 4. generate landmarks
-#ifdef POSE_DEBUG
+#ifdef POSE_TIMER
 			utils::Timer gen_t;
-#endif // POSE_DEBUG
+#endif // POSE_TIMER
 			types::Landmarks pose_lds;
-			generate_landmarks(heatmap, cropped_box, pose_lds);
-#ifdef POSE_DEBUG
+			if (num_joints == 136)
+			{
+				heatmap_to_coord_simple_regress(heatmap, cropped_box, pose_lds);
+			}
+			else if(num_joints == 26)
+			{
+				heatmap_to_coord_simple(heatmap, cropped_box, pose_lds);
+			}
+			else
+			{
+				std::stringstream ss;
+				ss << "num joints must be 136 or 26, but got" << num_joints;
+				throw std::runtime_error(ss.str());
+			}
+#ifdef POSE_TIMER
 			std::cout << "Generate landmarks " << i << " time: " << gen_t.count() << std::endl;
-#endif // POSE_DEBUG
+#endif // POSE_TIMER
 			types::BoxfWithLandmarks person_box_ld;
 			person_box_ld.box = box;
 			person_box_ld.landmarks = pose_lds;

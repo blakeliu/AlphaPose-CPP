@@ -1,4 +1,5 @@
 #include "alphapose.h"
+#include "utils.h"
 
 AlphaPose::AlphaPose(const std::string& _detector_param_path, const std::string& _detector_bin_path, 
 	const std::string& _pose_weight_path,
@@ -28,9 +29,21 @@ void AlphaPose::warm_up(int count)
 void AlphaPose::detect(cv::Mat& image, std::vector<types::BoxfWithLandmarks>& person_lds)
 {
 	std::vector<types::Boxf> detected_boxes;
+#ifdef POSE_TIMER
+	utils::Timer det_t;
+#endif // POSE_TIMER
 	yolo_model->detect(image, detected_boxes, detector_score_threshold, detector_iou_threshold);
+#ifdef POSE_TIMER
+	std::cout << "Yolo detected time: " << det_t.count() << std::endl;
+#endif // POSE_TIMER
 	if (detected_boxes.size() > 0)
 	{
+#ifdef POSE_TIMER
+		utils::Timer pose_t;
+#endif // POSE_TIMER
 		pose_model->detect(image, detected_boxes, person_lds);
+#ifdef POSE_TIMER
+		std::cout << "Pose detected time: " << pose_t.count() << std::endl;
+#endif // POSE_TIMER
 	}
 }
