@@ -15,6 +15,7 @@ public:
 	explicit NCNNYoloX(const std::string& _param_path,
 		const std::string& _bin_path,
 		unsigned int _num_threads = 1,
+		bool _use_vulkan = false,
 		int _input_height = 640,
 		int _input_width = 640); //
 	~NCNNYoloX();
@@ -42,6 +43,8 @@ private:
 	// target image size after resize, might use 416 for small model(nano/tiny)
 	const int input_height; // 640(s/m/l/x), 416(nano/tiny)
 	const int input_width; // 640(s/m/l/x), 416(nano/tiny)
+
+	const bool use_vulkan;
 
 	const float mean_vals[3] = { 255.f * 0.485f, 255.f * 0.456, 255.f * 0.406f };
 	const float norm_vals[3] = { 1.f / (255.f * 0.229f), 1.f / (255.f * 0.224f), 1.f / (255.f * 0.225f) };

@@ -98,6 +98,7 @@ int cli(int argc, char* argv[]) {
 	std::string input_file = "";
 	std::string output_file = "";
 	bool help = false;
+	bool use_vulkan = false;
 	auto cli = (
 		clipp::required("-dpm", "--detector_param_path") & clipp::value("detector_param_path prefix", detector_param_path),
 		clipp::required("-dbm", "--detector_bin_path") & clipp::value("detector_bin_path prefix", detector_bin_path),
@@ -109,6 +110,7 @@ int cli(int argc, char* argv[]) {
 		clipp::option("-pt", "--pose_num_threads") & clipp::value("set number of pose_num_threads", pose_num_threads),
 		clipp::option("-wc", "--warmup_count") & clipp::value("set number of warmup_count", warmup_count),
 		clipp::option("-pj", "--pose_joints") & clipp::value("set number of pose_joints", pose_num_joints),
+		clipp::option("-uv", "--use_vulkan").set(use_vulkan).doc("infer on vulkan"),
 		clipp::option("-h", "--help").set(help).doc("help")
 		);
 	if (!clipp::parse(argc, argv, cli)) {
@@ -125,7 +127,7 @@ int cli(int argc, char* argv[]) {
 	auto init_t = utils::Timer();
 	std::unique_ptr<AlphaPose> alpha_pose_model = std::make_unique<AlphaPose>(detector_param_path, detector_bin_path,
 		pose_param_path, pose_bin_path, detector_num_threads, pose_num_threads,
-		detector_score_threshold, detector_iou_threshold, pose_batch_size, pose_num_joints);
+		detector_score_threshold, detector_iou_threshold, pose_batch_size, pose_num_joints, use_vulkan);
 
 	alpha_pose_model->warm_up(warmup_count);
 	std::cout << "AlphaPose model load and init time: " << init_t.count() << std::endl;

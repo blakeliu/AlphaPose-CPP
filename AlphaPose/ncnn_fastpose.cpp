@@ -3,11 +3,12 @@
 #include "utils.h"
 
 NCNNFastPose::NCNNFastPose(const std::string& _param_path, const std::string& _bin_path, 
-	unsigned int _num_threads, int _batch_size, int _num_joints, int _input_height, int _input_width, 
+	unsigned int _num_threads, int _batch_size, int _num_joints, bool _use_vulkan, int _input_height, int _input_width,
 	int _heatmap_channel, int _heatmap_height, int _heatmap_width):
 	BasicNCNNHandler(_param_path, _bin_path, _num_threads),
 	batch_size(_batch_size), num_joints(_num_joints), input_height(_input_height), input_width(_input_width), 
-	heatmap_channel(_heatmap_channel), heatmap_height(_heatmap_height), heatmap_width(_heatmap_width)
+	heatmap_channel(_heatmap_channel), heatmap_height(_heatmap_height), heatmap_width(_heatmap_width),
+	use_vulkan(_use_vulkan)
 {
 	this->initialize_handler();
 	aspect_ratio = static_cast<float>(input_width) / static_cast<float>(input_height);
@@ -27,7 +28,14 @@ void NCNNFastPose::initialize_handler()
     net = new ncnn::Net();
     // init net, change this setting for better performance.
     net->opt.use_fp16_arithmetic = false;
-    net->opt.use_vulkan_compute = false; // default
+	if (use_vulkan)
+	{
+		net->opt.use_vulkan_compute = true;
+	}
+	else
+	{
+		net->opt.use_vulkan_compute = false; // default
+	}
     try
     {
         net->load_param(param_path);

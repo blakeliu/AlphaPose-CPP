@@ -16,6 +16,7 @@ public:
 		unsigned int _num_threads = 1,
 		int _batch_size = 1,
 		int _num_joints = 136,
+		bool _use_vulkan=false,
 		int _input_height = 256,
 		int _input_width = 192,
 		int _heatmap_channel = 3,
@@ -41,6 +42,7 @@ private:
 	const int heatmap_channel;
 	const int heatmap_height;
 	const int heatmap_width;
+	const bool use_vulkan;
 	std::unique_ptr<torch::jit::script::Module> _model = nullptr;
 private:
 	const float mean_vals[3] = { 255.f * 0.406f, 255.f * 0.457f, 255.f * 0.480f }; //bgr

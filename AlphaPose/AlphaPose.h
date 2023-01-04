@@ -12,7 +12,7 @@ public:
 		const std::string& _pose_param_path, const std::string& _pose_bin_path, 
 		unsigned int _detector_num_threads = 1, unsigned int _pose_num_threads = 1, 
 		float _detector_score_threshold = 0.25f, float _detector_iou_threshold = 0.45f, 
-		int _pose_batch_size = 1, int _pose_num_joints = 136);
+		int _pose_batch_size = 1, int _pose_num_joints = 136, bool _use_vulkan = false);
 	~AlphaPose();
 protected:
 	AlphaPose(const AlphaPose&) = delete; //

@@ -10,15 +10,16 @@ AlphaPose::AlphaPose(const std::string& _detector_param_path,
 	float _detector_score_threshold,
 	float _detector_iou_threshold,
 	int _pose_batch_size,
-	int _pose_num_joints): detector_param_path(_detector_param_path), detector_bin_path(_detector_bin_path),
+	int _pose_num_joints,
+	bool _use_vulkan): detector_param_path(_detector_param_path), detector_bin_path(_detector_bin_path),
 	pose_param_path(_pose_param_path), pose_bin_path(_pose_bin_path),
 	detector_num_threads(_detector_num_threads), pose_num_threads(_pose_num_threads),
 	detector_score_threshold(_detector_score_threshold), detector_iou_threshold(_detector_iou_threshold),
 	pose_batch_size(_pose_batch_size), pose_num_joints(_pose_num_joints)
 {
-	yolo_model = std::make_unique<NCNNYoloX>(detector_param_path, detector_bin_path, detector_num_threads);
+	yolo_model = std::make_unique<NCNNYoloX>(detector_param_path, detector_bin_path, detector_num_threads, _use_vulkan);
 	//pose_model = std::make_unique<TorchFastPose>(pose_param_path, pose_num_threads, 1, pose_num_joints);
-	pose_model = std::make_unique<NCNNFastPose>(pose_param_path, pose_bin_path, pose_num_threads, 1, pose_num_joints);
+	pose_model = std::make_unique<NCNNFastPose>(pose_param_path, pose_bin_path, pose_num_threads, 1, pose_num_joints, _use_vulkan);
 }
 
 AlphaPose::~AlphaPose()

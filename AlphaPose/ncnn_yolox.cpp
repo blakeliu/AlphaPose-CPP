@@ -11,10 +11,11 @@
 NCNNYoloX::NCNNYoloX(const std::string& _param_path,
 	const std::string& _bin_path,
 	unsigned int _num_threads,
+	bool _use_vulkan,
 	int _input_height,
-	int _input_width) :
+	int _input_width):
 	BasicNCNNHandler(_param_path, _bin_path, _num_threads),
-	input_height(_input_height), input_width(_input_width)
+	input_height(_input_height), input_width(_input_width), use_vulkan(_use_vulkan)
 {
 	this->initialize_handler();
 }
@@ -30,7 +31,14 @@ void NCNNYoloX::initialize_handler()
 	net = new ncnn::Net();
 	// init net, change this setting for better performance.
 	net->opt.use_fp16_arithmetic = false;
-	net->opt.use_vulkan_compute = false; // default
+	if (use_vulkan)
+	{
+		net->opt.use_vulkan_compute = true;
+	}
+	else
+	{
+		net->opt.use_vulkan_compute = false; // default
+	}
 	// setup Focus in yolov5
 	net->register_custom_layer("YoloV5Focus", YoloV5Focus_layer_creator);
 	try
