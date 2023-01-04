@@ -16,11 +16,6 @@ protected:
 	const char* log_id = nullptr;
 	const char* param_path = nullptr;
 	const char* bin_path = nullptr;
-	std::vector<const char*> input_names;
-	std::vector<const char*> output_names;
-	std::vector<int> input_indexes;
-	std::vector<int> output_indexes;
-	int num_outputs = 1;
 
 protected:
 	const unsigned int num_threads; // initialize at runtime.

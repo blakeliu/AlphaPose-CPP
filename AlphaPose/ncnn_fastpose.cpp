@@ -39,13 +39,6 @@ void NCNNFastPose::initialize_handler()
         std::cerr << "NCNNFastPose load failed: " << msg << std::endl;
         throw std::runtime_error(msg);
     }
-    input_indexes = net->input_indexes();
-    output_indexes = net->output_indexes();
-#ifdef NCNN_STRING
-    input_names = net->input_names();
-    output_names = net->output_names();
-#endif
-    num_outputs = output_indexes.size();
 #ifdef POSE_DEBUG
     this->print_debug_string();
 #endif
@@ -339,7 +332,7 @@ void NCNNFastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detect
 			at::Tensor heatmaps = at::from_blob(pack_mat_hms.data, { 1, pack_mat_hms.rows, pack_mat_hms.cols, pack_mat_hms.channels() }, at::TensorOptions().dtype(at::kFloat));
 			heatmaps = heatmaps.permute({ 0, 3, 1, 2 });
 #ifdef POSE_TIMER
-			std::cout << "Torch fastpose forward " << i << " time: " << forward_t.count() << std::endl;
+			std::cout << "ncnn fastpose forward " << i << " time: " << forward_t.count() << std::endl;
 #endif // POSE_TIMER
 #ifdef POSE_DEBUG
 			std::cout << "heatmap size: " << heatmaps.sizes() << std::endl;

@@ -89,9 +89,13 @@ private:
 
 	void generate_bboxes(const YoloXScaleParams& scale_params,
 		std::vector<types::Boxf>& bbox_collection,
-		ncnn::Extractor& extractor,
+		ncnn::Mat& outputs,
 		float score_threshold, int img_height,
 		int img_width); // rescale & exclude
+
+	void generate_proposals(std::vector<types::Boxf>& bbox_collection,
+		ncnn::Extractor& extractor,
+		float score_threshold); // 
 
 	void nms(std::vector<types::Boxf>& input, std::vector<types::Boxf>& output,
 		float iou_threshold, unsigned int topk, unsigned int nms_type);
