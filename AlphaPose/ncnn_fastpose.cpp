@@ -1,68 +1,72 @@
 #include <omp.h>  
-#include "torch_fastpose.h"
+#include "ncnn_fastpose.h"
 #include "utils.h"
 
-TorchFastPose::TorchFastPose(const std::string& _weight_path, unsigned int _num_threads,
-	int _batch_size, int _num_joints,
-	int _input_height, int _input_width,
-	int _heatmap_channel,
-	int _heatmap_height, int _heatmap_width
-) :
-	num_threads(_num_threads),
-	input_height(_input_height), input_width(_input_width),
-	batch_size(_batch_size), heatmap_channel(_heatmap_channel),
-	heatmap_height(_heatmap_height), heatmap_width(_heatmap_width),
-	num_joints(_num_joints)
+NCNNFastPose::NCNNFastPose(const std::string& _param_path, const std::string& _bin_path, 
+	unsigned int _num_threads, int _batch_size, int _num_joints, int _input_height, int _input_width, 
+	int _heatmap_channel, int _heatmap_height, int _heatmap_width):
+	BasicNCNNHandler(_param_path, _bin_path, _num_threads),
+	batch_size(_batch_size), num_joints(_num_joints), input_height(_input_height), input_width(_input_width), 
+	heatmap_channel(_heatmap_channel), heatmap_height(_heatmap_height), heatmap_width(_heatmap_width)
 {
-	try {
-		_model = std::make_unique<torch::jit::script::Module>(torch::jit::load(_weight_path.data(), at::kCPU));
-	}
-	catch (const c10::Error& e) {
-		std::string msg = std::string(e.what_without_backtrace());
-		std::cerr << "error: " << msg << std::endl;
-		throw std::runtime_error(msg);
-	}
-	catch (...) {
-		std::string msg = "Internal ERROR!";
-		throw std::runtime_error(msg);
-	}
-	_model->eval();
-
-#ifdef POSE_DEBUG
-	std::cout << "Init Inter-op num threads:" << at::get_num_interop_threads() << ", Intra-op num threads:" << at::get_num_threads() << std::endl;
-#endif // POSE_DEBUG
-	at::init_num_threads();
-	at::set_num_threads(num_threads);
-	at::set_num_interop_threads(num_threads);
-#ifdef POSE_DEBUG
-	std::cout << "Set Inter-op num threads:" << at::get_num_interop_threads() << ", Intra-op num threads:" << at::get_num_threads() << std::endl;
-#endif // POSE_DEBUG
-
+	this->initialize_handler();
 	aspect_ratio = static_cast<float>(input_width) / static_cast<float>(input_height);
 	feat_stride[0] = static_cast<float>(input_height) / static_cast<float>(heatmap_height);
 	feat_stride[1] = static_cast<float>(input_width) / static_cast<float>(heatmap_width);
+
 }
 
-TorchFastPose::~TorchFastPose()
+NCNNFastPose::~NCNNFastPose()
 {
+	if (net) delete net;
+	net = nullptr;
 }
 
-void TorchFastPose::transform(cv::Mat& mat_rs, at::Tensor& tensor_out)
+void NCNNFastPose::initialize_handler()
 {
-	mat_rs.convertTo(mat_rs, CV_32FC3);
-	utils::normalize_inplace(mat_rs, mean_vals, norm_vals);
-	tensor_out = at::from_blob(mat_rs.data, { 1, input_height, input_width, 3 }, at::TensorOptions().dtype(at::kFloat));
-	tensor_out = tensor_out.to(at::kCPU).permute({ 0, 3, 1, 2 });
+    net = new ncnn::Net();
+    // init net, change this setting for better performance.
+    net->opt.use_fp16_arithmetic = false;
+    net->opt.use_vulkan_compute = false; // default
+    try
+    {
+        net->load_param(param_path);
+        net->load_model(bin_path);
+    }
+    catch (const std::exception& e)
+    {
+        std::string msg = e.what();
+        std::cerr << "NCNNFastPose load failed: " << msg << std::endl;
+        throw std::runtime_error(msg);
+    }
+    input_indexes = net->input_indexes();
+    output_indexes = net->output_indexes();
+#ifdef NCNN_STRING
+    input_names = net->input_names();
+    output_names = net->output_names();
+#endif
+    num_outputs = output_indexes.size();
+#ifdef POSE_DEBUG
+    this->print_debug_string();
+#endif
 }
 
-void TorchFastPose::integral_op(at::Tensor& hm_1d)
+void NCNNFastPose::transform(const cv::Mat& mat_rs, ncnn::Mat& in)
+{
+	//mat_rs.convertTo(mat_rs, CV_32FC3);
+	in = ncnn::Mat::from_pixels(mat_rs.data, ncnn::Mat::PIXEL_BGR, mat_rs.cols, mat_rs.rows);
+	// (x-mean)*std
+	in.substract_mean_normalize(mean_vals, norm_vals);
+}
+
+void NCNNFastPose::integral_op(at::Tensor& hm_1d)
 {
 	int feat_dim = hm_1d.size(-1);
 	at::Tensor range_tensor = at::arange(feat_dim, at::kFloat);
 	hm_1d *= range_tensor;
 }
 
-void TorchFastPose::integral_tensor(at::Tensor& preds, at::Tensor& pred_joints, at::Tensor& pred_scores, const int num_joints, const int hm_height, const int hm_width)
+void NCNNFastPose::integral_tensor(at::Tensor& preds, at::Tensor& pred_joints, at::Tensor& pred_scores, const int num_joints, const int hm_height, const int hm_width)
 {
 	int bs = preds.size(0);
 	int feat_dim = hm_height * hm_width;
@@ -91,7 +95,7 @@ void TorchFastPose::integral_tensor(at::Tensor& preds, at::Tensor& pred_joints, 
 }
 
 
-void TorchFastPose::crop_image(const cv::Mat& input_mat, cv::Mat& crop_mat, types::Boxf& detected_box, types::Boxf& cropped_box)
+void NCNNFastPose::crop_image(const cv::Mat& input_mat, cv::Mat& crop_mat, types::Boxf& detected_box, types::Boxf& cropped_box)
 {
 	std::vector<float> center; // x y 
 	std::vector<float> scale; // w h
@@ -104,7 +108,7 @@ void TorchFastPose::crop_image(const cv::Mat& input_mat, cv::Mat& crop_mat, type
 	utils::center_scale_to_box(center, scale, cropped_box);
 }
 
-void TorchFastPose::transfrom_preds(at::Tensor& input_coord, std::vector<float>& output_coord, const std::vector<float>& center, const std::vector<float>& scale, const int hm_width, const int hm_height)
+void NCNNFastPose::transfrom_preds(at::Tensor& input_coord, std::vector<float>& output_coord, const std::vector<float>& center, const std::vector<float>& scale, const int hm_width, const int hm_height)
 {
 	const std::vector<float> shift = { 0.f, 0.f };
 	cv::Mat trans = utils::get_affine_transform(center, scale, shift, hm_height, hm_width, 0, true);
@@ -113,7 +117,7 @@ void TorchFastPose::transfrom_preds(at::Tensor& input_coord, std::vector<float>&
 	utils::affine_tranform(x, y, trans, output_coord);
 }
 
-void TorchFastPose::get_max_pred(at::Tensor& heatmap, at::Tensor& preds, at::Tensor& maxvals)
+void NCNNFastPose::get_max_pred(at::Tensor& heatmap, at::Tensor& preds, at::Tensor& maxvals)
 {
 	int hm_jonts_num = heatmap.size(0);
 	int hm_height = heatmap.size(1);
@@ -135,14 +139,14 @@ void TorchFastPose::get_max_pred(at::Tensor& heatmap, at::Tensor& preds, at::Ten
 	preds *= pred_mask;
 }
 
-void TorchFastPose::fast_nms_pose(at::Tensor& pred_joints, at::Tensor& pred_scores, at::Tensor& final_joints, at::Tensor& final_scores)
+void NCNNFastPose::fast_nms_pose(at::Tensor& pred_joints, at::Tensor& pred_scores, at::Tensor& final_joints, at::Tensor& final_scores)
 {
 	at::Tensor normed_scores = pred_scores / at::sum(pred_scores, 0);
 	final_joints = at::mul(pred_joints, normed_scores.repeat({ 1, 1, 2 })).sum(0);
 	final_scores = at::mul(pred_scores, normed_scores).sum(0);
 }
 
-void TorchFastPose::heatmap_to_coord_simple_regress(at::Tensor& heatmap, types::Boxf& cropped_box, types::Landmarks& out_landmarks)
+void NCNNFastPose::heatmap_to_coord_simple_regress(at::Tensor& heatmap, types::Boxf& cropped_box, types::Landmarks& out_landmarks)
 {
 	const int bs = heatmap.size(0);
 	const int hm_channel = heatmap.size(1);
@@ -196,7 +200,7 @@ void TorchFastPose::heatmap_to_coord_simple_regress(at::Tensor& heatmap, types::
 	out_landmarks.flag = true;
 }
 
-void TorchFastPose::heatmap_to_coord_simple(at::Tensor& heatmap, types::Boxf& cropped_box, types::Landmarks& out_landmarks)
+void NCNNFastPose::heatmap_to_coord_simple(at::Tensor& heatmap, types::Boxf& cropped_box, types::Landmarks& out_landmarks)
 {
 	at::Tensor pred_joints, pred_scores;
 	at::Tensor hms = heatmap[0]; //bs = 1
@@ -275,7 +279,7 @@ void TorchFastPose::heatmap_to_coord_simple(at::Tensor& heatmap, types::Boxf& cr
 
 }
 
-void TorchFastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detected_boxes, std::vector<types::BoxfWithLandmarks>& person_lds)
+void NCNNFastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detected_boxes, std::vector<types::BoxfWithLandmarks>& person_lds)
 {
 	for (size_t i = 0; i < detected_boxes.size(); i++)
 	{
@@ -289,36 +293,58 @@ void TorchFastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detec
 			cv::Mat mat_person;
 			types::Boxf cropped_box;
 			crop_image(image, mat_person, box, cropped_box);
-#ifdef POSE_DEBUG
-			std::string p_name = std::string("person-") + std::to_string(person_lds.size()) + std::string(".jpg");
-			cv::imwrite(p_name, mat_person);
-#endif // POSE_DEBUG
-
 			// 2. make input tensor
-			at::Tensor mat_tensor;
-			this->transform(mat_person, mat_tensor);
+			ncnn::Mat input;
+			this->transform(mat_person, input);
 #ifdef POSE_TIMER
 			std::cout << "Preprocessed image tensor " << i << " time: " << pre_t.count() << std::endl;
 #endif // POSE_TIMER
+
 #ifdef POSE_DEBUG
+			std::string p_name = std::string("person-") + std::to_string(person_lds.size()) + std::string(".jpg");
+			cv::imwrite(p_name, mat_person);
 			std::vector<int> mat_channel_indexs{ 0 };
-			this->print_pretty_tensor(mat_tensor[0], mat_channel_indexs);
+			//this->print_pretty_mat(input, mat_channel_indexs);
 #endif // POSE_DEBUG
 
 			// 3. forward
 #ifdef POSE_TIMER
 			utils::Timer forward_t;
 #endif // POSE_TIMER
-			std::vector<torch::jit::IValue> inputs;
-			inputs.emplace_back(mat_tensor);
-			at::Tensor heatmap = _model->forward(inputs).toTensor();
+			ncnn::Mat output;
+			auto extractor = net->create_extractor();
+			extractor.set_light_mode(false);  // default
+			extractor.set_num_threads(num_threads);
+			extractor.input("input", input);
+			extractor.extract("output", output);
+
+#ifdef POSE_DEBUG
+			std::cout << "output c: " << output.c << ", d: " << output.d << ", w: " << output.w << ", h: " << output.h <<std::endl;
+			//std::vector<int> hm_channel_indexs{ 0, 135 };
+			//this->print_pretty_mat(output, hm_channel_indexs);
+#endif // POSE_DEBUG
+
+			std::vector<cv::Mat> vec_mat_hms(output.c);
+			cv::Mat pack_mat_hms;
+			for (int i = 0; i < output.c; i++)
+			{
+				vec_mat_hms[i] = cv::Mat(output.h, output.w, CV_32FC1);
+				memcpy((uchar*)vec_mat_hms[i].data, output.channel(i), static_cast<size_t>(output.w) * static_cast<size_t>(output.h) * sizeof(float));
+			}
+			cv::merge(vec_mat_hms, pack_mat_hms);
+#ifdef POSE_DEBUG
+			//std::cout << vec_mat_hms[int(output.c) - 1] << std::endl;
+			std::cout << "pack_mat_hms c: " << pack_mat_hms.channels() << ", d: " << pack_mat_hms.dims << ", w: " << pack_mat_hms.cols << ", h: " << pack_mat_hms.rows << std::endl;
+#endif // POSE_DEBUG
+			at::Tensor heatmaps = at::from_blob(pack_mat_hms.data, { 1, pack_mat_hms.rows, pack_mat_hms.cols, pack_mat_hms.channels() }, at::TensorOptions().dtype(at::kFloat));
+			heatmaps = heatmaps.permute({ 0, 3, 1, 2 });
 #ifdef POSE_TIMER
 			std::cout << "Torch fastpose forward " << i << " time: " << forward_t.count() << std::endl;
 #endif // POSE_TIMER
 #ifdef POSE_DEBUG
-			std::cout << "heatmap size: " << heatmap.sizes() << std::endl;
-			std::vector<int> hm_channel_indexs{ 0, 135 };
-			this->print_pretty_tensor(heatmap[0], hm_channel_indexs);
+			std::cout << "heatmap size: " << heatmaps.sizes() << std::endl;
+			//std::vector<int> t_channel_indexs{ 0, 135 };
+			//this->print_pretty_tensor(heatmaps[0], t_channel_indexs);
 #endif // POSE_DEBUG
 
 			// 4. generate landmarks
@@ -328,11 +354,11 @@ void TorchFastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detec
 			types::Landmarks pose_lds;
 			if (num_joints == 136)
 			{
-				heatmap_to_coord_simple_regress(heatmap, cropped_box, pose_lds);
+				heatmap_to_coord_simple_regress(heatmaps, cropped_box, pose_lds);
 			}
 			else if (num_joints == 26)
 			{
-				heatmap_to_coord_simple(heatmap, cropped_box, pose_lds);
+				heatmap_to_coord_simple(heatmaps, cropped_box, pose_lds);
 			}
 			else
 			{
@@ -352,18 +378,12 @@ void TorchFastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detec
 	}
 }
 
-void TorchFastPose::warm_up(int count)
+void NCNNFastPose::warm_up(int count)
 {
-	at::Tensor mat_tensor = at::rand({ 1, 3, input_height, input_width }).to(at::kFloat).to(at::kCPU);
-	std::vector<torch::jit::IValue> inputs;
-	inputs.emplace_back(mat_tensor);
-	for (size_t i = 0; i < count; i++)
-	{
-		at::Tensor heatmap = _model->forward(inputs).toTensor();
-	}
+	BasicNCNNHandler::base_warm_up(input_height, input_width, 3, count);
 }
 
-void TorchFastPose::print_pretty_tensor(const at::Tensor& m, std::vector<int>& channel_indexs)
+void NCNNFastPose::print_pretty_tensor(const at::Tensor& m, std::vector<int>& channel_indexs)
 {
 	if (!channel_indexs.empty())
 	{

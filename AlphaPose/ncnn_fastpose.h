@@ -1,16 +1,18 @@
-#ifndef LIBTORCH_FAST_POSE_H
-#define LIBTORCH_FAST_POSE_H
+#ifndef NCNN_FASTPOSE_H
+#define NCNN_FASTPOSE_H
 #define NOMINMAX
 #undef min
 #undef max
 #include "torch/torch.h"
 #include "torch/script.h"
+#include "ncnn_handler.h"
 #include "types.h"
 
-class TorchFastPose
+class NCNNFastPose : public BasicNCNNHandler
 {
 public:
-	explicit TorchFastPose(const std::string& _weight_path,
+	explicit NCNNFastPose(const std::string& _param_path,
+		const std::string& _bin_path,
 		unsigned int _num_threads = 1,
 		int _batch_size = 1,
 		int _num_joints = 136,
@@ -20,16 +22,18 @@ public:
 		int _heatmap_height = 64,
 		int _heatmap_width = 48
 	);
-	~TorchFastPose();
+	~NCNNFastPose();
 
 protected:
-	TorchFastPose(const TorchFastPose&) = delete; //
-	TorchFastPose(TorchFastPose&&) = delete; //
-	TorchFastPose& operator=(const TorchFastPose&) = delete; //
-	TorchFastPose& operator=(TorchFastPose&&) = delete; //
+	NCNNFastPose(const NCNNFastPose&) = delete; //
+	NCNNFastPose(NCNNFastPose&&) = delete; //
+	NCNNFastPose& operator=(const NCNNFastPose&) = delete; //
+	NCNNFastPose& operator=(NCNNFastPose&&) = delete; //
+
+protected:
+	virtual void initialize_handler();
 
 private:
-	const unsigned int num_threads;
 	const int num_joints;
 	const int input_height;
 	const int input_width;
@@ -40,12 +44,14 @@ private:
 	std::unique_ptr<torch::jit::script::Module> _model = nullptr;
 private:
 	const float mean_vals[3] = { 255.f * 0.406f, 255.f * 0.457f, 255.f * 0.480f }; //bgr
-	const float norm_vals[3] = { 1.f / 255.f, 1.f / 255.f , 1.f / 255.f };
+	const float norm_vals[3] = { 1.f/255.f, 1.f/255.f , 1.f/255.f };
 	float aspect_ratio = 0.f;
 	float feat_stride[2] = { 0.f, 0.f }; // h w
 
 private:
-	void transform(cv::Mat& mat_rs, at::Tensor& tensor_out);
+
+	void transform(const cv::Mat& mat_rs, ncnn::Mat& in);
+
 
 	void integral_op(at::Tensor& hm_1d);
 
@@ -75,10 +81,7 @@ public:
 	void warm_up(int count);
 
 	static void print_pretty_tensor(const at::Tensor& m, std::vector<int>& channel_indexs);
-
 };
 
-#endif // !LIBTORCH_FAST_POSE_H
 
-
-
+#endif // !NCNN_FASTPOSE_H

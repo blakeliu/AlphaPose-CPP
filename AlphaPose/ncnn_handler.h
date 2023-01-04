@@ -63,6 +63,9 @@ public:
 	 * @param _channel
 	 */
 	virtual void base_warm_up(int _height, int _width, int _channel = 3, int warmup_count = 1);
+
+
+	static void print_pretty_mat(const ncnn::Mat& m, std::vector<int>& channel_indexs);
 };
 
 #endif //NCNN_HANDLER_H

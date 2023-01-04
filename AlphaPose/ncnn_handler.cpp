@@ -94,3 +94,42 @@ void BasicNCNNHandler::base_warm_up(int _height, int _width, int _channel, int w
         std::cout << "Can't warm up ncnn model!" << std::endl;
     }
 }
+
+void BasicNCNNHandler::print_pretty_mat(const ncnn::Mat& m, std::vector<int>& channel_indexs)
+{
+    if (!channel_indexs.empty())
+    {
+        for (size_t i = 0; i < channel_indexs.size(); i++)
+        {
+            const float* ptr = m.channel(channel_indexs[i]);
+            for (int y = 0; y < m.h; y++)
+            {
+                for (int x = 0; x < m.w; x++)
+                {
+                    printf("%f ", ptr[x]);
+                }
+                ptr += m.w;
+                printf("\n");
+            }
+            printf("------------------------\n");
+        }
+
+    }
+    else
+    {
+        for (int q = 0; q < m.c; q++)
+        {
+            const float* ptr = m.channel(q);
+            for (int y = 0; y < m.h; y++)
+            {
+                for (int x = 0; x < m.w; x++)
+                {
+                    printf("%f ", ptr[x]);
+                }
+                ptr += m.w;
+                printf("\n");
+            }
+            printf("------------------------\n");
+        }
+    }
+}

@@ -141,6 +141,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>D:\cv\project\onnx\onnxruntime-win-x64-1.11.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,6 +154,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="alphapose.cpp" />
+    <ClCompile Include="ncnn_fastpose.cpp" />
     <ClCompile Include="torch_fastpose.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ncnn_custom.cpp" />
@@ -164,6 +166,7 @@
     <ClInclude Include="alphapose.h" />
     <ClInclude Include="clipp.h" />
     <ClInclude Include="headers.h" />
+    <ClInclude Include="ncnn_fastpose.h" />
     <ClInclude Include="torch_fastpose.h" />
     <ClInclude Include="ncnn_custom.h" />
     <ClInclude Include="ncnn_handler.h" />
