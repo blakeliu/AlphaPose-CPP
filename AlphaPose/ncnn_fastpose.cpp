@@ -2,6 +2,8 @@
 #include "ncnn_fastpose.h"
 #include "utils.h"
 
+using namespace alpha;
+
 NCNNFastPose::NCNNFastPose(const std::string& _param_path, const std::string& _bin_path, 
 	unsigned int _num_threads, int _batch_size, int _num_joints, bool _use_vulkan, int _input_height, int _input_width,
 	int _heatmap_channel, int _heatmap_height, int _heatmap_width):

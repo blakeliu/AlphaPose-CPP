@@ -23,7 +23,7 @@ void test_alpha_pose_136() {
 	int pose_num_joints = 136;
 
 	auto init_t = utils::Timer();
-	std::unique_ptr<AlphaPose> alpha_pose_model = std::make_unique<AlphaPose>(detector_param_path, detector_bin_path, 
+	std::unique_ptr<alpha::AlphaPose> alpha_pose_model = std::make_unique<alpha::AlphaPose>(detector_param_path, detector_bin_path,
 		pose_param_path, pose_bin_path, 
 		detector_num_threads, pose_num_threads, detector_score_threshold, detector_iou_threshold, 
 		pose_batch_size, pose_num_joints);
@@ -61,7 +61,7 @@ void test_alpha_pose_26() {
 	int pose_num_joints = 26;
 
 	auto init_t = utils::Timer();
-	std::unique_ptr<AlphaPose> alpha_pose_model = std::make_unique<AlphaPose>(detector_param_path, detector_bin_path,
+	std::unique_ptr<alpha::AlphaPose> alpha_pose_model = std::make_unique<alpha::AlphaPose>(detector_param_path, detector_bin_path,
 		pose_param_path, pose_bin_path, detector_num_threads, pose_num_threads,
 		detector_score_threshold, detector_iou_threshold, pose_batch_size, pose_num_joints);
 
@@ -125,7 +125,7 @@ int cli(int argc, char* argv[]) {
 
 	
 	auto init_t = utils::Timer();
-	std::unique_ptr<AlphaPose> alpha_pose_model = std::make_unique<AlphaPose>(detector_param_path, detector_bin_path,
+	std::unique_ptr<alpha::AlphaPose> alpha_pose_model = std::make_unique<alpha::AlphaPose>(detector_param_path, detector_bin_path,
 		pose_param_path, pose_bin_path, detector_num_threads, pose_num_threads,
 		detector_score_threshold, detector_iou_threshold, pose_batch_size, pose_num_joints, use_vulkan);
 

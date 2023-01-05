@@ -2,6 +2,8 @@
 #include "torch_fastpose.h"
 #include "utils.h"
 
+using alpha::TorchFastPose;
+
 TorchFastPose::TorchFastPose(const std::string& _weight_path, unsigned int _num_threads,
 	int _batch_size, int _num_joints,
 	int _input_height, int _input_width,

@@ -1,6 +1,8 @@
 #include "alphapose.h"
 #include "utils.h"
 
+using namespace alpha;
+
 AlphaPose::AlphaPose(const std::string& _detector_param_path,
 	const std::string& _detector_bin_path,
 	const std::string& _pose_param_path,

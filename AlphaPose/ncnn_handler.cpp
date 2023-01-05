@@ -4,6 +4,7 @@
 
 #include "ncnn_handler.h"
 
+using alpha::BasicNCNNHandler;
 
 BasicNCNNHandler::BasicNCNNHandler(
 	const std::string& _param_path, const std::string& _bin_path, unsigned int _num_threads) :

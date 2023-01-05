@@ -6,14 +6,14 @@
 #include "ncnn_custom.h"
 #include "utils.h"
 
-
+using alpha::NCNNYoloX;
 
 NCNNYoloX::NCNNYoloX(const std::string& _param_path,
 	const std::string& _bin_path,
 	unsigned int _num_threads,
 	bool _use_vulkan,
 	int _input_height,
-	int _input_width):
+	int _input_width) :
 	BasicNCNNHandler(_param_path, _bin_path, _num_threads),
 	input_height(_input_height), input_width(_input_width), use_vulkan(_use_vulkan)
 {
