@@ -11,6 +11,8 @@ AlphaPose::AlphaPose(const std::string& _detector_param_path,
 	unsigned int _pose_num_threads,
 	float _detector_score_threshold,
 	float _detector_iou_threshold,
+	int _detector_height, 
+	int _detector_width,
 	int _pose_batch_size,
 	int _pose_num_joints,
 	bool _use_vulkan): detector_param_path(_detector_param_path), detector_bin_path(_detector_bin_path),
@@ -19,7 +21,7 @@ AlphaPose::AlphaPose(const std::string& _detector_param_path,
 	detector_score_threshold(_detector_score_threshold), detector_iou_threshold(_detector_iou_threshold),
 	pose_batch_size(_pose_batch_size), pose_num_joints(_pose_num_joints)
 {
-	yolo_model = std::make_unique<NCNNYoloX>(detector_param_path, detector_bin_path, detector_num_threads, _use_vulkan);
+	yolo_model = std::make_unique<NCNNYoloX>(detector_param_path, detector_bin_path, detector_num_threads, _use_vulkan, _detector_height, _detector_width);
 	//pose_model = std::make_unique<TorchFastPose>(pose_param_path, pose_num_threads, 1, pose_num_joints);
 	pose_model = std::make_unique<NCNNFastPose>(pose_param_path, pose_bin_path, pose_num_threads, 1, pose_num_joints, _use_vulkan);
 }

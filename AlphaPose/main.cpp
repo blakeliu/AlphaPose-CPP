@@ -8,8 +8,10 @@
 
 
 void test_alpha_pose_136() {
-	std::string detector_param_path = "models/yolox_s.opt.param";
-	std::string detector_bin_path = "models/yolox_s.opt.bin";
+	//std::string detector_param_path = "models/yolox_s.opt.param";
+	//std::string detector_bin_path = "models/yolox_s.opt.bin";
+	std::string detector_param_path = "models/yolox_tiny.opt.param";
+	std::string detector_bin_path = "models/yolox_tiny.opt.bin";
 	//std::string pose_param_path = "models/multi_domain_fast50_regression_256x192-jit.pt";
 	//std::string pose_bin_path = "";
 	std::string pose_param_path = "models/multi_domain_fast50_regression_256x192.opt.param";
@@ -21,11 +23,15 @@ void test_alpha_pose_136() {
 	float detector_iou_threshold = 0.6;
 	int pose_batch_size = 1;
 	int pose_num_joints = 136;
+	int detector_height = 416;
+	int detector_width = 416;
 
 	auto init_t = utils::Timer();
 	std::unique_ptr<alpha::AlphaPose> alpha_pose_model = std::make_unique<alpha::AlphaPose>(detector_param_path, detector_bin_path,
-		pose_param_path, pose_bin_path, 
-		detector_num_threads, pose_num_threads, detector_score_threshold, detector_iou_threshold, 
+		pose_param_path, pose_bin_path,
+		detector_num_threads, pose_num_threads,
+		detector_score_threshold, detector_iou_threshold,
+		detector_height, detector_width,
 		pose_batch_size, pose_num_joints);
 
 	alpha_pose_model->warm_up(warmup_count);
@@ -59,11 +65,15 @@ void test_alpha_pose_26() {
 	float detector_iou_threshold = 0.6;
 	int pose_batch_size = 1;
 	int pose_num_joints = 26;
+	int detector_height = 640;
+	int detector_width = 640;
 
 	auto init_t = utils::Timer();
 	std::unique_ptr<alpha::AlphaPose> alpha_pose_model = std::make_unique<alpha::AlphaPose>(detector_param_path, detector_bin_path,
 		pose_param_path, pose_bin_path, detector_num_threads, pose_num_threads,
-		detector_score_threshold, detector_iou_threshold, pose_batch_size, pose_num_joints);
+		detector_score_threshold, detector_iou_threshold,
+		detector_height, detector_width,
+		pose_batch_size, pose_num_joints);
 
 	alpha_pose_model->warm_up(warmup_count);
 	std::cout << "AlphaPose model load and init time: " << init_t.count() << std::endl;
@@ -123,11 +133,22 @@ int cli(int argc, char* argv[]) {
 		return 0;
 	}
 
-	
+	int detector_height = 640;
+	int detector_width = 640;
+	std::size_t found = detector_param_path.find("yolox_tiny");
+	if (found != std::string::npos)
+	{
+		detector_height = 416;
+		detector_width = 416;
+	}
+	std::cout << "Yolox input height: " << detector_height << ", input width: " << detector_width << std::endl;
+
 	auto init_t = utils::Timer();
 	std::unique_ptr<alpha::AlphaPose> alpha_pose_model = std::make_unique<alpha::AlphaPose>(detector_param_path, detector_bin_path,
 		pose_param_path, pose_bin_path, detector_num_threads, pose_num_threads,
-		detector_score_threshold, detector_iou_threshold, pose_batch_size, pose_num_joints, use_vulkan);
+		detector_score_threshold, detector_iou_threshold,
+		detector_height, detector_width,
+		pose_batch_size, pose_num_joints, use_vulkan);
 
 	alpha_pose_model->warm_up(warmup_count);
 	std::cout << "AlphaPose model load and init time: " << init_t.count() << std::endl;
@@ -144,7 +165,7 @@ int cli(int argc, char* argv[]) {
 	return 0;
 }
 
-int main(int argc, char* argv[]) { 
+int main(int argc, char* argv[]) {
 	std::cout << "Hello, AlphaPose!" << std::endl;
 	//test_alpha_pose_136();
 	//test_alpha_pose_26();
