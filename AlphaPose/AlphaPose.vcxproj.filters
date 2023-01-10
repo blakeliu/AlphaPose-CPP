@@ -39,6 +39,9 @@
     <ClCompile Include="ncnn_fastpose.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="pose_utils.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers.h">
@@ -69,6 +72,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ncnn_fastpose.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="pose_utils.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -291,6 +291,7 @@
   <ItemGroup>
     <ClCompile Include="alphapose.cpp" />
     <ClCompile Include="ncnn_fastpose.cpp" />
+    <ClCompile Include="pose_utils.cpp" />
     <ClCompile Include="torch_fastpose.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ncnn_custom.cpp" />
@@ -303,6 +304,7 @@
     <ClInclude Include="clipp.h" />
     <ClInclude Include="headers.h" />
     <ClInclude Include="ncnn_fastpose.h" />
+    <ClInclude Include="pose_utils.h" />
     <ClInclude Include="torch_fastpose.h" />
     <ClInclude Include="ncnn_custom.h" />
     <ClInclude Include="ncnn_handler.h" />

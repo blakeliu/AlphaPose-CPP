@@ -1,13 +1,12 @@
 #ifndef ALPHA_POSE_H
 #define ALPHA_POSE_H
 
-#include "ncnn_yolox.h"
-#include "torch_fastpose.h"
+//#include "torch_fastpose.h"
 #include "ncnn_fastpose.h"
+#include "ncnn_yolox.h"
 
 namespace alpha
 {
-
 	class AlphaPose
 	{
 	public:
