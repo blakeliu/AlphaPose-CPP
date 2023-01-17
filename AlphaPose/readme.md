@@ -3,7 +3,7 @@
 - 目标检测yolox-s ncnn
 - 姿态估计fastpose 基于libtorch或ncnn
 - vs2019开发
-- 
+- [模型文件仓库](http://192.168.2.200/tface/alpha_pose_models.git)
 
 # package版本
 
