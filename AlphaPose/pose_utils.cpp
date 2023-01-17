@@ -154,7 +154,7 @@ void alpha::TorchPoseUtils::heatmap_to_coord_simple(int num_threads, at::Tensor&
 
 		px = (std::max)((std::min)(px, (int)(hm_width - 1)), 0);
 		py = (std::max)((std::min)(py, (int)(hm_height - 1)), 0);
-		if (px > 1 && px < hm_width - 1 && py > 1 && px < hm_height - 1)
+		if (px > 1 && px < hm_width - 1 && py > 1 && py < hm_height - 1)
 		{
 			int px_add = px + 1;
 			int py_add = py + 1;
