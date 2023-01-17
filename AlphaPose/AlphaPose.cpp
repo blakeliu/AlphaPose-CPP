@@ -21,7 +21,8 @@ AlphaPose::AlphaPose(const std::string& _detector_param_path,
 	detector_score_threshold(_detector_score_threshold), detector_iou_threshold(_detector_iou_threshold),
 	pose_batch_size(_pose_batch_size), pose_num_joints(_pose_num_joints)
 {
-	yolo_model = std::make_unique<NCNNYoloX>(detector_param_path, detector_bin_path, detector_num_threads, _use_vulkan, _detector_height, _detector_width);
+	//det_model = std::make_unique<NCNNYoloX>(detector_param_path, detector_bin_path, detector_num_threads, _use_vulkan, _detector_height, _detector_width);
+	det_model = std::make_unique<NCNNFastestDet>(detector_param_path, detector_bin_path, detector_num_threads, _use_vulkan, _detector_height, _detector_width);
 	//pose_model = std::make_unique<TorchFastPose>(pose_param_path, pose_num_threads, 1, pose_num_joints);
 	pose_model = std::make_unique<NCNNFastPose>(pose_param_path, pose_bin_path, pose_num_threads, 1, pose_num_joints, _use_vulkan);
 }
@@ -32,7 +33,7 @@ AlphaPose::~AlphaPose()
 
 void AlphaPose::warm_up(int count)
 {
-	yolo_model->warm_up(count);
+	det_model->warm_up(count);
 	pose_model->warm_up(count);
 }
 
@@ -44,9 +45,9 @@ void AlphaPose::detect(cv::Mat& image, std::vector<types::BoxfWithLandmarks>& pe
 #ifdef POSE_TIMER
 	utils::Timer det_t;
 #endif // POSE_TIMER
-	yolo_model->detect(image, detected_boxes, detector_score_threshold, detector_iou_threshold);
+	det_model->detect(image, detected_boxes, detector_score_threshold, detector_iou_threshold);
 #ifdef POSE_TIMER
-	std::cout << "Yolo detected time: " << det_t.count() << std::endl;
+	std::cout << "Object detected time: " << det_t.count() << std::endl;
 #endif // POSE_TIMER
 	if (detected_boxes.size() > 0)
 	{

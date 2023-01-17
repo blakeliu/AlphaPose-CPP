@@ -290,6 +290,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="alphapose.cpp" />
+    <ClCompile Include="fastest_det_demo.cpp" />
+    <ClCompile Include="ncnn_fastestdet.cpp" />
     <ClCompile Include="ncnn_fastpose.cpp" />
     <ClCompile Include="pose_utils.cpp" />
     <ClCompile Include="torch_fastpose.cpp" />
@@ -303,6 +305,7 @@
     <ClInclude Include="alphapose.h" />
     <ClInclude Include="clipp.h" />
     <ClInclude Include="headers.h" />
+    <ClInclude Include="ncnn_fastestdet.h" />
     <ClInclude Include="ncnn_fastpose.h" />
     <ClInclude Include="pose_utils.h" />
     <ClInclude Include="torch_fastpose.h" />
@@ -313,7 +316,7 @@
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="readme.md" />
+    <None Include="..\readme.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

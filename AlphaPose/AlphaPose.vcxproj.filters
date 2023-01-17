@@ -42,6 +42,12 @@
     <ClCompile Include="pose_utils.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ncnn_fastestdet.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="fastest_det_demo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers.h">
@@ -77,8 +83,11 @@
     <ClInclude Include="pose_utils.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="ncnn_fastestdet.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="readme.md" />
+    <None Include="..\readme.md" />
   </ItemGroup>
 </Project>

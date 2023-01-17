@@ -102,7 +102,7 @@ int cli(int argc, char* argv[]) {
 	unsigned int pose_num_threads = 4;
 	int warmup_count = 1;
 	float detector_score_threshold = 0.5;
-	float detector_iou_threshold = 0.6;
+	float detector_iou_threshold = 0.7;
 	int pose_batch_size = 1;
 	int pose_num_joints = 126;
 	std::string input_file = "";
@@ -135,13 +135,18 @@ int cli(int argc, char* argv[]) {
 
 	int detector_height = 640;
 	int detector_width = 640;
-	std::size_t found = detector_param_path.find("yolox_tiny");
-	if (found != std::string::npos)
+	if (detector_param_path.find("yolox_tiny") != std::string::npos)
 	{
 		detector_height = 416;
 		detector_width = 416;
 	}
-	std::cout << "Yolox input height: " << detector_height << ", input width: " << detector_width << std::endl;
+	else if (detector_param_path.find("FastestDet") != std::string::npos)
+	{
+		detector_height = 352;
+		detector_width = 352;
+	}
+
+	std::cout << "Object Detector input height: " << detector_height << ", input width: " << detector_width << std::endl;
 
 	auto init_t = utils::Timer();
 	std::unique_ptr<alpha::AlphaPose> alpha_pose_model = std::make_unique<alpha::AlphaPose>(detector_param_path, detector_bin_path,
