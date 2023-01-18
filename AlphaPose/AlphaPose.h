@@ -35,8 +35,8 @@ namespace alpha
 		float detector_iou_threshold;
 		int pose_batch_size;
 		int pose_num_joints;
-		//std::unique_ptr<NCNNYoloX> det_model = nullptr;
-		std::unique_ptr<NCNNFastestDet> det_model = nullptr;
+		std::unique_ptr<NCNNYoloX> det_model = nullptr;
+		//std::unique_ptr<NCNNFastestDet> det_model = nullptr;
 		//std::unique_ptr<TorchFastPose> pose_model = nullptr;
 		std::unique_ptr<NCNNFastPose> pose_model = nullptr;
 

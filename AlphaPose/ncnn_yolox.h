@@ -9,7 +9,7 @@
 #include "types.h"
 
 namespace alpha {
-	//https://github.com/Megvii-BaseDetection/YOLOX
+	//https://github.com/DefTruth/lite.ai.toolkit/blob/main/lite/ncnn/cv/ncnn_yolox.cpp
 	class  NCNNYoloX : public BasicNCNNHandler
 	{
 

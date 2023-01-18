@@ -135,7 +135,7 @@ int cli(int argc, char* argv[]) {
 
 	int detector_height = 640;
 	int detector_width = 640;
-	if (detector_param_path.find("yolox_tiny") != std::string::npos)
+	if (detector_param_path.find("yolox_tiny") != std::string::npos || detector_param_path.find("yolox_nano") != std::string::npos)
 	{
 		detector_height = 416;
 		detector_width = 416;
