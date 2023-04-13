@@ -22,7 +22,61 @@
 ```
 
 # run cli
+- fp32
 ```shell
 .\AlphaPose.exe -dpm ..\..\AlphaPose\models\yolox_s.opt.param -dbm ..\..\AlphaPose\models\yolox_s.opt.bin -ppm ..\..\AlphaPose\models\multi_domain_fast50_regression_256x192.opt.param -pbm ..\..\AlphaPose\models\multi_domain_fast50_regression_256x192.opt.bin -pj 136 -i .\1.jpg -o 1_out.jpg  -dt 4 -pt 4 -wc 5
 .\AlphaPose.exe -dpm ..\..\AlphaPose\models\yolox_s.opt.param -dbm ..\..\AlphaPose\models\yolox_s.opt.bin -ppm ..\..\AlphaPose\models\halpe26_fast_res50_256x192.opt.param -pbm ..\..\AlphaPose\models\halpe26_fast_res50_256x192.opt.bin -pj 26 -i .\1.jpg -o 1_out.jpg  -dt 4 -pt 4 -wc 5
+ -dpm  ..\alpha_pose_models\yolox_nano.opt.param -dbm ..\alpha_pose_models\yolox_nano.opt.bin -ppm ..\alpha_pose_models\halpe26_fast_res50_256x192.opt.param -pbm ..\alpha_pose_models\halpe26_fast_res50_256x192.opt.bin  -pj 26  -i pics\1.jpg -o pics\1-out.jpg -dt 4 -pt 4 -wc 5
+```
+
+- fp16
+```shell
+ -dpm  ..\alpha_pose_models\yolox_nano-opt.param -dbm ..\alpha_pose_models\yolox_nano-opt.bin -ppm ..\alpha_pose_models\halpe26_fast_res50_256x192-opt.param -pbm ..\alpha_pose_models\halpe26_fast_res50_256x192-opt.bin  -pj 26  -i pics\1.jpg -o pics\1-out.jpg -dt 4 -pt 4 -wc 5 -fp16
+```
+
+
+[yolov5lite-e fp16](https://pan.baidu.com/s/1kWtwx1C0OTTxbwqJyIyXWg)
+```
+-dpm  ..\alpha_pose_models\yolov5lites_fp16\yolov5lite-e.param -dbm ..\alpha_pose_models\yolov5lites_fp16\yolov5lite-e.bin -ppm ..\alpha_pose_models\halpe26_fast_res50_256x192-opt.param -pbm ..\alpha_pose_models\halpe26_fast_res50_256x192-opt.bin  -pj 26  -i pics\1.jpg -o pics\1-out.jpg -dt 4 -pt 4 -wc 5 -fp16
+```
+
+# time cost
+```txt
+Object Detector input height: 416, input width: 416
+AlphaPose model load and init time: 1.07343
+Yolox trans mat time: 0.0039237
+Yolox infer mat time: 0.0382188
+Yolox gen box time: 0.0001189
+Yolox nms box time: 1.14e-05
+Object detected time: 0.0454368
+Preprocessed image tensor 0 time: 0.0009864
+ncnn fastpose forward 0 time: 0.0600666
+ncnn mat convert torch tensor0 time: 0.0003712
+Generate landmarks 0 time: 0.0125228
+Pose detected time: 0.0765909
+AlphaPose model infer time: 0.122566
+```
+
+# models
+- fp32
+```txt
+yolox_nano.opt
+halpe26_fast_res50_256x192
+halpe26_fast_res50_256x192-fp32
+
+```
+- fp16
+```
+yolox_nano-opt
+halpe26_fast_res50_256x192-opt
+
+
+```
+
+
+# convert fp16 int8
+
+- int8
+```shell
+/ncnn2table yolov5-lite-opt.param yolov5-lite-opt.bin imagelist.txt yolov5-lite.table mean=[104,117,123] norm=[0.229f, 0.224, 0.225] shape=[640,640,3] pixel=BGR thread=8 method=kl
 ```

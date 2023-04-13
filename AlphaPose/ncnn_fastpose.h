@@ -16,6 +16,7 @@ namespace alpha
 			int _batch_size = 1,
 			int _num_joints = 136,
 			bool _use_vulkan = false,
+			bool _use_fp16 = false,
 			int _input_height = 256,
 			int _input_width = 192,
 			int _heatmap_channel = 3,
@@ -42,6 +43,8 @@ namespace alpha
 		const int heatmap_height;
 		const int heatmap_width;
 		const bool use_vulkan;
+		const bool use_fp16;
+		const bool use_int8;
 	private:
 		const float mean_vals[3] = { 255.f * 0.406f, 255.f * 0.457f, 255.f * 0.480f }; //bgr
 		const float norm_vals[3] = { 1.f / 255.f, 1.f / 255.f , 1.f / 255.f };

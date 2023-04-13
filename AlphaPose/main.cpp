@@ -101,14 +101,17 @@ int cli(int argc, char* argv[]) {
 	unsigned int detector_num_threads = 4;
 	unsigned int pose_num_threads = 4;
 	int warmup_count = 1;
-	float detector_score_threshold = 0.5;
-	float detector_iou_threshold = 0.7;
+	float detector_score_threshold = 0.25f;
+	float detector_iou_threshold = 0.45;
+	//float detector_score_threshold = 0.60f;
+	//float detector_iou_threshold = 0.60f;
 	int pose_batch_size = 1;
 	int pose_num_joints = 126;
 	std::string input_file = "";
 	std::string output_file = "";
 	bool help = false;
 	bool use_vulkan = false;
+	bool use_fp16 = false;
 	auto cli = (
 		clipp::required("-dpm", "--detector_param_path") & clipp::value("detector_param_path prefix", detector_param_path),
 		clipp::required("-dbm", "--detector_bin_path") & clipp::value("detector_bin_path prefix", detector_bin_path),
@@ -121,6 +124,7 @@ int cli(int argc, char* argv[]) {
 		clipp::option("-wc", "--warmup_count") & clipp::value("set number of warmup_count", warmup_count),
 		clipp::option("-pj", "--pose_joints") & clipp::value("set number of pose_joints", pose_num_joints),
 		clipp::option("-uv", "--use_vulkan").set(use_vulkan).doc("infer on vulkan"),
+		clipp::option("-fp16", "--use_fp16").set(use_fp16).doc("infer speed by fp16"),
 		clipp::option("-h", "--help").set(help).doc("help")
 		);
 	if (!clipp::parse(argc, argv, cli)) {
@@ -135,7 +139,8 @@ int cli(int argc, char* argv[]) {
 
 	int detector_height = 640;
 	int detector_width = 640;
-	if (detector_param_path.find("yolox_tiny") != std::string::npos || detector_param_path.find("yolox_nano") != std::string::npos)
+	if (detector_param_path.find("yolox_tiny") != std::string::npos || detector_param_path.find("yolox_nano") != std::string::npos ||
+		detector_param_path.find("yolov5lite-s") != std::string::npos)
 	{
 		detector_height = 416;
 		detector_width = 416;
@@ -145,6 +150,11 @@ int cli(int argc, char* argv[]) {
 		detector_height = 352;
 		detector_width = 352;
 	}
+	else if (detector_param_path.find("yolov5lite-e") != std::string::npos)
+	{
+		detector_height = 320;
+		detector_width = 320;
+	}
 
 	std::cout << "Object Detector input height: " << detector_height << ", input width: " << detector_width << std::endl;
 
@@ -153,7 +163,7 @@ int cli(int argc, char* argv[]) {
 		pose_param_path, pose_bin_path, detector_num_threads, pose_num_threads,
 		detector_score_threshold, detector_iou_threshold,
 		detector_height, detector_width,
-		pose_batch_size, pose_num_joints, use_vulkan);
+		pose_batch_size, pose_num_joints, use_vulkan, use_fp16);
 
 	alpha_pose_model->warm_up(warmup_count);
 	std::cout << "AlphaPose model load and init time: " << init_t.count() << std::endl;

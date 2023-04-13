@@ -238,6 +238,7 @@
       <LanguageStandard>stdcpp14</LanguageStandard>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -290,9 +291,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="alphapose.cpp" />
-    <ClCompile Include="fastest_det_demo.cpp" />
     <ClCompile Include="ncnn_fastestdet.cpp" />
     <ClCompile Include="ncnn_fastpose.cpp" />
+    <ClCompile Include="ncnn_nanodet.cpp" />
+    <ClCompile Include="ncnn_yolov5lite.cpp" />
     <ClCompile Include="pose_utils.cpp" />
     <ClCompile Include="torch_fastpose.cpp" />
     <ClCompile Include="main.cpp" />
@@ -300,6 +302,7 @@
     <ClCompile Include="ncnn_handler.cpp" />
     <ClCompile Include="ncnn_yolox.cpp" />
     <ClCompile Include="utils.cpp" />
+    <ClCompile Include="v5lite-s.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="alphapose.h" />
@@ -307,6 +310,8 @@
     <ClInclude Include="headers.h" />
     <ClInclude Include="ncnn_fastestdet.h" />
     <ClInclude Include="ncnn_fastpose.h" />
+    <ClInclude Include="ncnn_nanodet.h" />
+    <ClInclude Include="ncnn_yolov5lite.h" />
     <ClInclude Include="pose_utils.h" />
     <ClInclude Include="torch_fastpose.h" />
     <ClInclude Include="ncnn_custom.h" />

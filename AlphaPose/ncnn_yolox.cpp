@@ -12,10 +12,12 @@ NCNNYoloX::NCNNYoloX(const std::string& _param_path,
 	const std::string& _bin_path,
 	unsigned int _num_threads,
 	bool _use_vulkan,
+	bool _use_fp16,
 	int _input_height,
 	int _input_width) :
 	BasicNCNNHandler(_param_path, _bin_path, _num_threads),
-	input_height(_input_height), input_width(_input_width), use_vulkan(_use_vulkan)
+	input_height(_input_height), input_width(_input_width),
+	use_vulkan(_use_vulkan), use_fp16(_use_fp16), use_int8(false)
 {
 	this->initialize_handler();
 }
@@ -30,15 +32,18 @@ void NCNNYoloX::initialize_handler()
 {
 	net = new ncnn::Net();
 	// init net, change this setting for better performance.
-	net->opt.use_fp16_arithmetic = false;
+	//net->opt.use_fp16_arithmetic = false;
+	net->opt.use_vulkan_compute = false; // default
 	if (use_vulkan)
 	{
 		net->opt.use_vulkan_compute = true;
 	}
-	else
+
+	if (use_fp16)
 	{
-		net->opt.use_vulkan_compute = false; // default
+		net->opt.use_fp16_storage = true;
 	}
+
 	// setup Focus in yolov5
 	net->register_custom_layer("YoloV5Focus", YoloV5Focus_layer_creator);
 	try
@@ -52,6 +57,7 @@ void NCNNYoloX::initialize_handler()
 		std::cerr << "NCNNYoloX load failed: " << msg << std::endl;
 		throw std::runtime_error(msg);
 	}
+
 #ifdef POSE_DEBUG
 	this->print_debug_string();
 #endif
@@ -268,11 +274,6 @@ void NCNNYoloX::generate_bboxes(const YoloXScaleParams& scale_params,
 	std::cout << "detected num_anchors: " << num_anchors << "\n";
 	std::cout << "generate_bboxes num: " << bbox_collection.size() << "\n";
 #endif
-}
-
-void NCNNYoloX::generate_proposals(std::vector<types::Boxf>& bbox_collection, ncnn::Extractor& extractor, float score_threshold)
-{
-
 }
 
 void NCNNYoloX::nms(std::vector<types::Boxf>& input, std::vector<types::Boxf>& output,

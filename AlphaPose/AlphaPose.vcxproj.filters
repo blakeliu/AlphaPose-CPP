@@ -45,7 +45,13 @@
     <ClCompile Include="ncnn_fastestdet.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="fastest_det_demo.cpp">
+    <ClCompile Include="ncnn_nanodet.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ncnn_yolov5lite.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="v5lite-s.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -84,6 +90,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ncnn_fastestdet.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ncnn_nanodet.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ncnn_yolov5lite.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

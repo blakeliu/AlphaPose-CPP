@@ -1,27 +1,23 @@
-//
-// Created by DefTruth on 2021/10/18.
-//
-
-#ifndef NCNN_YOLOX_H
-#define NCNN_YOLOX_H
+#ifndef NCNN_YOLOV5LITE_H
+#define NCNN_YOLOV5LITE_H
 
 #include "ncnn_handler.h"
 #include "types.h"
 
 namespace alpha {
-	//https://github.com/DefTruth/lite.ai.toolkit/blob/main/lite/ncnn/cv/ncnn_yolox.cpp
-	class  NCNNYoloX : public BasicNCNNHandler
+	//https://github.com/ppogg/YOLOv5-Lite/blob/master/cpp_demo/ncnn/v5lite-s.cpp
+	class NCNNYoloV5lite :
+		public BasicNCNNHandler
 	{
-
 	public:
-		explicit NCNNYoloX(const std::string& _param_path,
+		explicit NCNNYoloV5lite(const std::string& _param_path,
 			const std::string& _bin_path,
 			unsigned int _num_threads = 1,
 			bool _use_vulkan = false,
 			bool _use_fp16 = false,
-			int _input_height = 640,
-			int _input_width = 640); //
-		~NCNNYoloX();
+			int _input_height = 320,
+			int _input_width = 320); //
+		~NCNNYoloV5lite();
 
 	private:
 		// nested classes
@@ -30,7 +26,7 @@ namespace alpha {
 			int grid0;
 			int grid1;
 			int stride;
-		} YoloXAnchor;
+		} YoloAnchor;
 
 		typedef struct
 		{
@@ -40,19 +36,19 @@ namespace alpha {
 			int new_unpad_w;
 			int new_unpad_h;
 			bool flag;
-		} YoloXScaleParams;
+		} YoloScaleParams;
 
 	private:
 		// target image size after resize, might use 416 for small model(nano/tiny)
-		const int input_height; // 640(s/m/l/x), 416(nano/tiny)
-		const int input_width; // 640(s/m/l/x), 416(nano/tiny)
+		const int input_height; // 320(v5lite-e)/416(v5lite-s)
+		const int input_width; // 320(v5lite-e)/416(v5lite-s)
 
 		const bool use_vulkan;
 		const bool use_fp16;
 		const bool use_int8;
 
-		const float mean_vals[3] = { 255.f * 0.485f, 255.f * 0.456, 255.f * 0.406f };
-		const float norm_vals[3] = { 1.f / (255.f * 0.229f), 1.f / (255.f * 0.224f), 1.f / (255.f * 0.225f) };
+		const float mean_vals[3] = { 0, 0, 0 };
+		const float norm_vals[3] = { 1.f / (255.f), 1.f / (255.f), 1.f / (255.f) };
 
 		const char* class_names[80] = {
 			"person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light",
@@ -72,10 +68,10 @@ namespace alpha {
 		static constexpr const unsigned int max_nms = 30000;
 
 	protected:
-		NCNNYoloX(const NCNNYoloX&) = delete; //
-		NCNNYoloX(NCNNYoloX&&) = delete; //
-		NCNNYoloX& operator=(const NCNNYoloX&) = delete; //
-		NCNNYoloX& operator=(NCNNYoloX&&) = delete; //
+		NCNNYoloV5lite(const NCNNYoloV5lite&) = delete; //
+		NCNNYoloV5lite(NCNNYoloV5lite&&) = delete; //
+		NCNNYoloV5lite& operator=(const NCNNYoloV5lite&) = delete; //
+		NCNNYoloV5lite& operator=(NCNNYoloV5lite&&) = delete; //
 
 	protected:
 		virtual void initialize_handler();
@@ -88,28 +84,30 @@ namespace alpha {
 			cv::Mat& mat_rs,
 			int target_height,
 			int target_width,
-			YoloXScaleParams& scale_params);
+			YoloScaleParams& scale_params);
 
-		void generate_anchors(const int target_height,
-			const int target_width,
-			std::vector<int>& strides,
-			std::vector<YoloXAnchor>& anchors);
+		void generate_bboxes(const ncnn::Mat& anchors, int stride, const ncnn::Mat& in_pad,
+			const ncnn::Mat& feat_blob, float prob_threshold,
+			std::vector<types::Boxf>& bbox_collection);
 
-		void generate_bboxes(const YoloXScaleParams& scale_params,
-			std::vector<types::Boxf>& bbox_collection,
-			ncnn::Mat& outputs,
-			float score_threshold, int img_height,
-			int img_width); // rescale & exclude
+		void generate_proposals(
+			ncnn::Extractor& extractor,
+			const ncnn::Mat& in_pad,
+			const YoloScaleParams& scale_params,
+			std::vector<types::Boxf>& proposals,
+			float prob_threshold); // 
 
 		void nms(std::vector<types::Boxf>& input, std::vector<types::Boxf>& output,
-			float iou_threshold, unsigned int topk, unsigned int nms_type);
+			float nms_threshold, unsigned int topk, unsigned int nms_type);
 
 	public:
 		void detect(const cv::Mat& mat, std::vector<types::Boxf>& detected_boxes,
-			float score_threshold = 0.25f, float iou_threshold = 0.45f,
+			float prob_threshold = 0.25f, float nms_threshold = 0.45f,
 			unsigned int topk = 100, unsigned int nms_type = NMS::OFFSET);
 
 		void warm_up(int count);
 	};
+
 }
-#endif //NCNN_YOLOX_H
+
+#endif NCNN_YOLOV5LITE_H

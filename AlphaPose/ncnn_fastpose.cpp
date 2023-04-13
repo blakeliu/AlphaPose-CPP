@@ -7,12 +7,12 @@
 using namespace alpha;
 
 NCNNFastPose::NCNNFastPose(const std::string& _param_path, const std::string& _bin_path,
-	unsigned int _num_threads, int _batch_size, int _num_joints, bool _use_vulkan, int _input_height, int _input_width,
+	unsigned int _num_threads, int _batch_size, int _num_joints, bool _use_vulkan, bool _use_fp16, int _input_height, int _input_width,
 	int _heatmap_channel, int _heatmap_height, int _heatmap_width) :
 	BasicNCNNHandler(_param_path, _bin_path, _num_threads),
 	batch_size(_batch_size), num_joints(_num_joints), input_height(_input_height), input_width(_input_width),
 	heatmap_channel(_heatmap_channel), heatmap_height(_heatmap_height), heatmap_width(_heatmap_width),
-	use_vulkan(_use_vulkan)
+	use_vulkan(_use_vulkan), use_fp16(_use_fp16), use_int8(false)
 {
 	this->initialize_handler();
 	aspect_ratio = static_cast<float>(input_width) / static_cast<float>(input_height);
@@ -31,15 +31,17 @@ void NCNNFastPose::initialize_handler()
 {
 	net = new ncnn::Net();
 	// init net, change this setting for better performance.
-	net->opt.use_fp16_arithmetic = false;
+	//net->opt.use_fp16_arithmetic = false;
+	net->opt.use_vulkan_compute = false; // default
 	if (use_vulkan)
 	{
 		net->opt.use_vulkan_compute = true;
 	}
-	else
+	if (use_fp16)
 	{
-		net->opt.use_vulkan_compute = false; // default
+		net->opt.use_fp16_storage = true;
 	}
+
 	try
 	{
 		net->load_param(param_path);
@@ -116,12 +118,19 @@ void NCNNFastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detect
 			extractor.input("input", input);
 			extractor.extract("output", output);
 
+#ifdef POSE_TIMER
+			std::cout << "ncnn fastpose forward " << i << " time: " << forward_t.count() << std::endl;
+#endif // POSE_TIMER
+
 #ifdef POSE_DEBUG
 			std::cout << "output c: " << output.c << ", d: " << output.d << ", w: " << output.w << ", h: " << output.h << std::endl;
 			//std::vector<int> hm_channel_indexs{ 0, 135 };
 			//this->print_pretty_mat(output, hm_channel_indexs);
 #endif // POSE_DEBUG
 
+#ifdef POSE_TIMER
+			utils::Timer mat_tensor_t;
+#endif // POSE_TIMER
 			std::vector<cv::Mat> vec_mat_hms(output.c);
 			cv::Mat pack_mat_hms;
 			for (int i = 0; i < output.c; i++)
@@ -136,9 +145,11 @@ void NCNNFastPose::detect(const cv::Mat& image, std::vector<types::Boxf>& detect
 #endif // POSE_DEBUG
 			at::Tensor heatmaps = at::from_blob(pack_mat_hms.data, { 1, pack_mat_hms.rows, pack_mat_hms.cols, pack_mat_hms.channels() }, at::TensorOptions().dtype(at::kFloat));
 			heatmaps = heatmaps.permute({ 0, 3, 1, 2 });
+
 #ifdef POSE_TIMER
-			std::cout << "ncnn fastpose forward " << i << " time: " << forward_t.count() << std::endl;
+			std::cout << "ncnn mat convert torch tensor" << i << " time: " << mat_tensor_t.count() << std::endl;
 #endif // POSE_TIMER
+
 #ifdef POSE_DEBUG
 			std::cout << "heatmap size: " << heatmaps.sizes() << std::endl;
 			//std::vector<int> t_channel_indexs{ 0, 135 };
