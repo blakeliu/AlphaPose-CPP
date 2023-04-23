@@ -33,15 +33,6 @@
     <ClCompile Include="alphapose.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="torch_fastpose.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ncnn_fastpose.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="pose_utils.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="ncnn_fastestdet.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -52,6 +43,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="v5lite-s.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mm_rtmpose.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -77,16 +71,7 @@
     <ClInclude Include="alphapose.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="torch_fastpose.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="clipp.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="ncnn_fastpose.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="pose_utils.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ncnn_fastestdet.h">
@@ -96,6 +81,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ncnn_yolov5lite.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mm_rtmpose.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

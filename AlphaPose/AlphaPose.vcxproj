@@ -143,8 +143,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='no-vulkan-Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>D:\lib\opencv-4.6.0\build\x64\vc15\lib;D:\lib\libtorch-1.13.1-cpu-debug\lib;D:\cv\project\ml\ncnn\build_debug\install\lib;$(LibraryPath)</LibraryPath>
-    <IncludePath>D:\lib\libtorch-1.13.1-cpu-debug\include;D:\lib\opencv-4.6.0\build\include;D:\lib\libtorch-1.13.1-cpu-debug\include\torch\csrc\api\include;D:\cv\project\ml\ncnn\build_debug\install\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\lib\opencv-4.6.0\build\x64\vc15\lib;D:\cv\project\ml\ncnn\build_debug\install\lib;D:\lib\mmdeploy-1.0.0-windows-amd64\lib;D:\lib\mmdeploy-1.0.0-windows-amd64\thirdparty\onnxruntime\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\lib\opencv-4.6.0\build\include;D:\cv\project\ml\ncnn\build_debug\install\include;D:\lib\mmdeploy-1.0.0-windows-amd64\include;D:\lib\mmdeploy-1.0.0-windows-amd64\thirdparty\onnxruntime\include;D:\lib\mmdeploy-1.0.0-windows-amd64\include\mmdeploy\third_party\outcome;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -153,8 +153,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='no-vulkan-Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\lib\opencv-4.6.0\build\include;D:\lib\libtorch-1.13.1-cpu-release\include\torch\csrc\api\include;D:\lib\libtorch-1.13.1-cpu-release\include;D:\cv\project\ml\ncnn\build_release\install\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\lib\opencv-4.6.0\build\x64\vc15\lib;D:\cv\project\ml\ncnn\build_release\install\lib;D:\lib\libtorch-1.13.1-cpu-release\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\lib\opencv-4.6.0\build\include;D:\cv\project\ml\ncnn\build_release\install\include;D:\lib\mmdeploy-1.0.0-windows-amd64\include;D:\lib\mmdeploy-1.0.0-windows-amd64\thirdparty\onnxruntime\include;D:\lib\mmdeploy-1.0.0-windows-amd64\include\mmdeploy\third_party\outcome;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\lib\opencv-4.6.0\build\x64\vc15\lib;D:\cv\project\ml\ncnn\build_release\install\lib;D:\lib\mmdeploy-1.0.0-windows-amd64\lib;D:\lib\mmdeploy-1.0.0-windows-amd64\thirdparty\onnxruntime\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -235,7 +235,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;ENABLE_DEBUG_STRING;ENABLE_TIMER;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
       <Optimization>Disabled</Optimization>
@@ -244,7 +244,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_world460d.lib;c10.lib;libprotobufd.lib;torch.lib;torch_cpu.lib;ncnnd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world460d.lib;ncnnd.lib;onnxruntime.lib;mmdeploy.lib;mmdeploy_ort_net.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -277,7 +277,7 @@
       <PreprocessorDefinitions>NDEBUG;ENABLE_TIMER;_CONSOLE;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>D:\cv\project\onnx\onnxruntime-win-x64-1.11.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
@@ -286,17 +286,15 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_world460.lib;c10.lib;libprotobuf.lib;torch.lib;torch_cpu.lib;ncnn.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world460.lib;ncnn.lib;onnxruntime.lib;mmdeploy.lib;mmdeploy_ort_net.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="alphapose.cpp" />
+    <ClCompile Include="mm_rtmpose.cpp" />
     <ClCompile Include="ncnn_fastestdet.cpp" />
-    <ClCompile Include="ncnn_fastpose.cpp" />
     <ClCompile Include="ncnn_nanodet.cpp" />
     <ClCompile Include="ncnn_yolov5lite.cpp" />
-    <ClCompile Include="pose_utils.cpp" />
-    <ClCompile Include="torch_fastpose.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ncnn_custom.cpp" />
     <ClCompile Include="ncnn_handler.cpp" />
@@ -308,12 +306,10 @@
     <ClInclude Include="alphapose.h" />
     <ClInclude Include="clipp.h" />
     <ClInclude Include="headers.h" />
+    <ClInclude Include="mm_rtmpose.h" />
     <ClInclude Include="ncnn_fastestdet.h" />
-    <ClInclude Include="ncnn_fastpose.h" />
     <ClInclude Include="ncnn_nanodet.h" />
     <ClInclude Include="ncnn_yolov5lite.h" />
-    <ClInclude Include="pose_utils.h" />
-    <ClInclude Include="torch_fastpose.h" />
     <ClInclude Include="ncnn_custom.h" />
     <ClInclude Include="ncnn_handler.h" />
     <ClInclude Include="ncnn_yolox.h" />

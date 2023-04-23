@@ -1,7 +1,7 @@
 #ifndef ALPHA_POSE_H
 #define ALPHA_POSE_H
 
-#include "ncnn_fastpose.h"
+#include "mm_rtmpose.h"
 #include "ncnn_yolox.h"
 #include "ncnn_yolov5lite.h"
 
@@ -11,7 +11,7 @@ namespace alpha
 	{
 	public:
 		explicit AlphaPose(const std::string& _detector_param_path, const std::string& _detector_bin_path,
-			const std::string& _pose_param_path, const std::string& _pose_bin_path,
+			const std::string& _pose_weight_path,
 			unsigned int _detector_num_threads = 1, unsigned int _pose_num_threads = 1,
 			float _detector_score_threshold = 0.25f, float _detector_iou_threshold = 0.45f,
 			int _detector_height = 640, int _detector_width = 640,
@@ -26,8 +26,7 @@ namespace alpha
 	private:
 		std::string detector_param_path;
 		std::string detector_bin_path;
-		std::string pose_param_path;
-		std::string pose_bin_path;
+		std::string pose_weight_path;
 		unsigned int detector_num_threads;
 		unsigned int pose_num_threads;
 		float detector_score_threshold;
@@ -36,7 +35,7 @@ namespace alpha
 		int pose_num_joints;
 		//std::unique_ptr<NCNNYoloX> det_model = nullptr;
 		std::unique_ptr<NCNNYoloV5lite> det_model = nullptr;
-		std::unique_ptr<NCNNFastPose> pose_model = nullptr;
+		std::unique_ptr<MMRTMPose> pose_model = nullptr;
 
 	public:
 		void detect(cv::Mat& image, std::vector<types::BoxfWithLandmarks>& person_lds);
