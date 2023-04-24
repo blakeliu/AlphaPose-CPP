@@ -61,7 +61,7 @@ float alpha::MMRTMPose::resize(cv::Mat& input, cv::Mat& output)
 	}
 	else
 	{
-		output = input;
+		output = input.clone();
 	}
 	return scale_factor;
 }
@@ -78,7 +78,8 @@ void alpha::MMRTMPose::detect(const cv::Mat& image, std::vector<types::Boxf>& de
 		{
 			//cv::Rect crop_rect = cv::Rect();
 			cv::Mat crop_img = image(cv::Range(int(box.y1), int(box.y2)), cv::Range(int(box.x1), int(box.x2)));
-			/*std::string img_file = "pics/person.png";
+#ifdef ENABLE_DEBUG_STRING
+			std::string img_file = "person.png";
 			cv::Mat img = cv::imread(img_file);
 			if (img.empty()) {
 				fprintf(stderr, "failed to load image: %s\n", img_file.c_str());
@@ -88,7 +89,8 @@ void alpha::MMRTMPose::detect(const cv::Mat& image, std::vector<types::Boxf>& de
 			for (int i = 0; i < dets[0].length; i++) {
 				cv::circle(img, { (int)dets[0].point[i].x, (int)dets[0].point[i].y }, 1, { 0, 255, 0 }, 2);
 			}
-			cv::imwrite("person.png", img);*/
+			cv::imwrite("person-out.png", img);
+#endif // ENABLE_DEBUG_STRING
 
 			cv::Mat resize_img;
 			float scale = resize(crop_img, resize_img);
@@ -100,10 +102,14 @@ void alpha::MMRTMPose::detect(const cv::Mat& image, std::vector<types::Boxf>& de
 			std::cout << "RTMPose infer time: " << infer_t.count() << std::endl;
 #endif // POSE_TIMER
 
-			/*for (int i = 0; i < res[0].length; i++) {
+#ifdef ENABLE_DEBUG_STRING
+			cv::imwrite("person.png", resize_img);
+
+			for (int i = 0; i < res[0].length; i++) {
 				cv::circle(resize_img, { (int)res[0].point[i].x, (int)res[0].point[i].y }, 1, { 0, 255, 0 }, 2);
-			}*/
-			//cv::imwrite("crop_img.png", resize_img);
+			}
+			cv::imwrite("crop_img.png", resize_img);
+#endif // ENABLE_DEBUG_STRING
 
 			types::Landmarks pose_lds;
 			for (size_t k = 0; k < res[0].length; k++)
@@ -111,6 +117,7 @@ void alpha::MMRTMPose::detect(const cv::Mat& image, std::vector<types::Boxf>& de
 
 				int x = (int)(res[0].point[k].x / scale);
 				int y = (int)(res[0].point[k].y / scale);
+				float score = res[0].score[k];
 
 				x = (std::max)(0, x) + box.x1;
 				x = (std::max)(0, (std::min)(x, width - 1));
@@ -120,6 +127,7 @@ void alpha::MMRTMPose::detect(const cv::Mat& image, std::vector<types::Boxf>& de
 				//float x = int(res[0].point[k].x);
 				//float y = int(res[0].point[k].y);
 				pose_lds.points.emplace_back(cv::Point2f(x, y));
+				pose_lds.scores.push_back(score);
 			}
 			types::BoxfWithLandmarks person_box_ld;
 			person_box_ld.box = box;

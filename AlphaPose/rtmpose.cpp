@@ -1,9 +1,9 @@
-#include "alphapose.h"
+#include "rtmpose.h"
 #include "utils.h"
 
 using namespace alpha;
 
-AlphaPose::AlphaPose(const std::string& _detector_param_path,
+RTMPose::RTMPose(const std::string& _detector_param_path,
 	const std::string& _detector_bin_path,
 	const std::string& _pose_weight_path,
 	unsigned int _detector_num_threads,
@@ -22,16 +22,14 @@ AlphaPose::AlphaPose(const std::string& _detector_param_path,
 	pose_batch_size(_pose_batch_size), pose_num_joints(_pose_num_joints)
 {
 	det_model = std::make_unique<NCNNYoloV5lite>(detector_param_path, detector_bin_path, detector_num_threads, _use_vulkan, _use_fp16, _detector_height, _detector_width);
-	//det_model = std::make_unique<NCNNYoloX>(detector_param_path, detector_bin_path, detector_num_threads, _use_vulkan, _use_fp16, _detector_height, _detector_width);
-	//det_model = std::make_unique<NCNNFastestDet>(detector_param_path, detector_bin_path, detector_num_threads, _use_vulkan, _detector_height, _detector_width);
 	pose_model = std::make_unique<MMRTMPose>(pose_weight_path, pose_num_threads, 1, pose_num_joints);
 }
 
-AlphaPose::~AlphaPose()
+RTMPose::~RTMPose()
 {
 }
 
-void AlphaPose::warm_up(int count)
+void RTMPose::warm_up(int count)
 {
 	det_model->warm_up(count);
 	pose_model->warm_up(count);
@@ -39,7 +37,7 @@ void AlphaPose::warm_up(int count)
 
 
 
-void AlphaPose::detect(cv::Mat& image, std::vector<types::BoxfWithLandmarks>& person_lds)
+void RTMPose::detect(cv::Mat& image, std::vector<types::BoxfWithLandmarks>& person_lds)
 {
 	std::vector<types::Boxf> detected_boxes;
 #ifdef POSE_TIMER

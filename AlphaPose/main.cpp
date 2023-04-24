@@ -2,38 +2,10 @@
 #include <filesystem>
 #include <chrono>
 //#include "ort_yolox.h"
+#include "mmdeploy/pose_detector.hpp"
 #include "clipp.h"
 #include "utils.h"
-#include "alphapose.h"
-#include "mmdeploy/pose_detector.hpp"
-
-
-int pose_det_demo() {
-	std::string img_file = "pics/person.png";
-	std::string model_path = "../alpha_pose_models/rtmpose-s-halpe";
-	std::string device_name = "cpu";
-	cv::Mat img = cv::imread(img_file);
-	if (img.empty()) {
-		fprintf(stderr, "failed to load image: %s\n", img_file.c_str());
-		return -1;
-	}
-
-	using namespace mmdeploy;
-
-	PoseDetector* detector = new PoseDetector{ Model(model_path), Device(device_name) };
-	auto res = detector->Apply(img);
-
-	for (int i = 0; i < res[0].length; i++) {
-		cv::circle(img, { (int)res[0].point[i].x, (int)res[0].point[i].y }, 1, { 0, 255, 0 }, 2);
-	}
-	cv::imwrite("output_pose.png", img);
-	if (detector) {
-		delete detector;
-	}
-	detector = nullptr;
-	return 0;
-}
-
+#include "rtmpose.h"
 
 
 int cli(int argc, char* argv[]) {
@@ -107,7 +79,7 @@ int cli(int argc, char* argv[]) {
 	std::cout << "Cur dir: " << std::filesystem::current_path() << std::endl;
 
 	auto init_t = utils::Timer();
-	std::unique_ptr<alpha::AlphaPose> alpha_pose_model = std::make_unique<alpha::AlphaPose>(detector_param_path, detector_bin_path,
+	std::unique_ptr<alpha::RTMPose> alpha_pose_model = std::make_unique<alpha::RTMPose>(detector_param_path, detector_bin_path,
 		pose_weight_path,
 		detector_num_threads, pose_num_threads,
 		detector_score_threshold, detector_iou_threshold,
@@ -115,7 +87,7 @@ int cli(int argc, char* argv[]) {
 		pose_batch_size, pose_num_joints, use_vulkan, use_fp16);
 
 	alpha_pose_model->warm_up(warmup_count);
-	std::cout << "AlphaPose model load and init time: " << init_t.count() << std::endl;
+	std::cout << "RTMPose model load and init time: " << init_t.count() << std::endl;
 
 	if (cam_id > 0)
 	{
@@ -139,8 +111,11 @@ int cli(int argc, char* argv[]) {
 				utils::draw_pose_box_with_landmasks(show, person_lds, pose_num_joints);
 				cv::putText(show, std::to_string(fps), cv::Point(50, 50), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 255), 1);
 				cv::imshow("cap", show);
-				if (cv::waitKey(10) >= 0)
+				int c = cv::waitKey(10);
+				if (c == 27 || c == 81)
+				{
 					break;
+				}
 			}
 		}
 	}
@@ -150,7 +125,7 @@ int cli(int argc, char* argv[]) {
 		auto infer_t = utils::Timer();
 		std::vector<types::BoxfWithLandmarks> person_lds;
 		alpha_pose_model->detect(image, person_lds);
-		std::cout << "AlphaPose model infer time: " << infer_t.count() << std::endl;
+		std::cout << "RTMPose model infer time: " << infer_t.count() << std::endl;
 
 		cv::Mat show_img = image.clone();
 		utils::draw_pose_box_with_landmasks(show_img, person_lds, pose_num_joints);
@@ -161,10 +136,7 @@ int cli(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-	std::cout << "Hello, AlphaPose!" << std::endl;
-	//test_alpha_pose_136();
-	//test_alpha_pose_26();
+	std::cout << "Hello, RTMPose!" << std::endl;
 	cli(argc, argv);
-	//pose_det_demo();
 	return 0;
 }

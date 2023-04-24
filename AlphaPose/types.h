@@ -69,6 +69,7 @@ namespace types
 	//landmark points
 	typedef struct LandmarksType {
 		std::vector<cv::Point2f> points;
+		std::vector<float> scores;
 		bool flag;
 
 		LandmarksType() : flag(false)
@@ -85,6 +86,7 @@ namespace types
 		BoxfWithLandmarksType() : flag(false)
 		{};
 	} BoxfWithLandmarks;
+
 
 	//face whether to wear mask.
 	typedef struct MaskType {

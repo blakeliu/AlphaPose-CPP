@@ -80,3 +80,8 @@ halpe26_fast_res50_256x192-opt
 ```shell
 /ncnn2table yolov5-lite-opt.param yolov5-lite-opt.bin imagelist.txt yolov5-lite.table mean=[104,117,123] norm=[0.229f, 0.224, 0.225] shape=[640,640,3] pixel=BGR thread=8 method=kl
 ```
+
+# run
+```
+-dpm  ..\alpha_pose_models\yolov5lites_fp16\yolov5lite-e.param -dbm ..\alpha_pose_models\yolov5lites_fp16\yolov5lite-e.bin -pm ..\alpha_pose_models\rtmpose-s-halpe  -pj 136  -i pics\1.jpg -o pics\1-out.jpg -dt 4 -pt 4 -wc 5  -id 1
+```

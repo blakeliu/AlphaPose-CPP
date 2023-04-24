@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="utils.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -30,22 +27,19 @@
     <ClCompile Include="ncnn_custom.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="alphapose.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ncnn_fastestdet.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ncnn_nanodet.cpp">
+    <ClCompile Include="rtmpose.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="ncnn_yolov5lite.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="v5lite-s.cpp">
+    <ClCompile Include="mm_rtmpose.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="mm_rtmpose.cpp">
+    <ClCompile Include="pose_tracker.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -68,22 +62,34 @@
     <ClInclude Include="ncnn_custom.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="alphapose.h">
+    <ClInclude Include="rtmpose.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="clipp.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="ncnn_fastestdet.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="ncnn_nanodet.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ncnn_yolov5lite.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="mm_rtmpose.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mediaio.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="palette.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="skeleton.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="visualize.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="pose_tracker_params.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="argparse.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

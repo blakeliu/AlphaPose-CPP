@@ -7,21 +7,21 @@
 
 namespace alpha
 {
-	class AlphaPose
+	class RTMPose
 	{
 	public:
-		explicit AlphaPose(const std::string& _detector_param_path, const std::string& _detector_bin_path,
+		explicit RTMPose(const std::string& _detector_param_path, const std::string& _detector_bin_path,
 			const std::string& _pose_weight_path,
 			unsigned int _detector_num_threads = 1, unsigned int _pose_num_threads = 1,
 			float _detector_score_threshold = 0.25f, float _detector_iou_threshold = 0.45f,
 			int _detector_height = 640, int _detector_width = 640,
 			int _pose_batch_size = 1, int _pose_num_joints = 136, bool _use_vulkan = false, bool _use_fp16 = false);
-		~AlphaPose();
+		~RTMPose();
 	protected:
-		AlphaPose(const AlphaPose&) = delete; //
-		AlphaPose(AlphaPose&&) = delete; //
-		AlphaPose& operator=(const AlphaPose&) = delete; //
-		AlphaPose& operator=(AlphaPose&&) = delete; //
+		RTMPose(const RTMPose&) = delete; //
+		RTMPose(RTMPose&&) = delete; //
+		RTMPose& operator=(const RTMPose&) = delete; //
+		RTMPose& operator=(RTMPose&&) = delete; //
 
 	private:
 		std::string detector_param_path;
