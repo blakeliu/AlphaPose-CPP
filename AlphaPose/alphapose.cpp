@@ -22,7 +22,7 @@ alpha::AlphaPose::AlphaPose(const std::string& _det_weight_path,
 	}
 	catch (const std::exception& e)
 	{
-		std::cout << "Tracker model init failed! det_weight_path: " << det_weight_path <<
+		std::cerr << "Tracker model init failed! det_weight_path: " << det_weight_path <<
 			", pose_weight_path: " << pose_weight_path << ", err: " << e.what() << std::endl;
 	}
 	init_tracker_params(params);
@@ -49,7 +49,7 @@ void alpha::AlphaPose::init_tracker_params(mmdeploy::PoseTracker::Params& params
 	params->track_max_missing = 10;
 }
 
-void alpha::AlphaPose::detect(cv::Mat& image, std::vector<types::BoxfWithLandmarks>& person_lds)
+void alpha::AlphaPose::detect(cv::Mat& image, std::vector<types::BoxfWithLandmarks>& person_lds, const int num_joints)
 {
 	if (image.empty())
 	{
@@ -62,6 +62,10 @@ void alpha::AlphaPose::detect(cv::Mat& image, std::vector<types::BoxfWithLandmar
 		types::Landmarks pose_lds;
 		pose_lds.scores.clear();
 		for (size_t i = 0; i < target.keypoint_count; ++i) {
+			if (i >= num_joints)
+			{
+				break;
+			}
 			pose_lds.points.emplace_back(cv::Point2f(target.keypoints[i].x, target.keypoints[i].y));
 			pose_lds.scores.push_back(target.scores[i]);
 		}
@@ -96,20 +100,21 @@ void alpha::AlphaPose::warm_up(int count)
 
 void alpha::AlphaPose::show(const std::vector<types::BoxfWithLandmarks>& boxes_kps, cv::Mat& image, int pose_num_joints, float kps_thr, int resize)
 {
-	if (boxes_kps.empty()) return;
-	std::vector<std::array<int, 2>> l_pair;
-	std::vector<std::array<int, 3>> p_color;
-	std::vector<std::array<int, 3>> line_color;
+	int height = image.rows;
+	int width = image.cols;
+	float scale = float(resize) / std::max(height, width);
+	cv::resize(image, image, cv::Size(0, 0), scale, scale);
+
+	if (boxes_kps.empty()) {
+		return;
+	}
+
 	int len_pair = 0;
 	int len_pcolor = 0;
 	int len_lcolor = 0;
 	std::vector<int> link_color_idxs;
 	std::vector<int> point_color_idxs;
 
-	int height = image.rows;
-	int width = image.cols;
-	float scale = float(resize) / std::max(height, width);
-	cv::resize(image, image, cv::Size(0, 0), scale, scale);
 
 	if (pose_num_joints == 136)
 	{
@@ -218,7 +223,54 @@ void alpha::AlphaPose::show(const std::vector<types::BoxfWithLandmarks>& boxes_k
 		len_pcolor = sizeof(_pcolor) / sizeof(_pcolor[0]);
 		len_lcolor = sizeof(_lcolor) / sizeof(_lcolor[0]);
 
-	}
+		link_color_idxs = {
+			0, 0, 0, 0,
+			1, 1, 1, 1, 1, 1,
+			2, 2, 2, 2,
+			3, 3, 3, 3,
+			4, 4, 4, 4, 4, 4
+		};
 
+		point_color_idxs = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+			14, 15, 16,17, 18, 19, 20, 21, 22, 23, 24, 25
+		};
+		for (const types::BoxfWithLandmarks& person_kps : boxes_kps)
+		{
+			std::vector<int> show_point{ 0 };
+			show_point.resize(pose_num_joints);
+			for (size_t i = 0; i < len_pair; i++)
+			{
+				int s = _pair[i][0];
+				int e = _pair[i][1];
+				if (person_kps.landmarks.scores[s] > kps_thr && person_kps.landmarks.scores[e] > kps_thr)
+				{
+					show_point[s] = 1;
+					show_point[e] = 1;
+					cv::Point2f sp = person_kps.landmarks.points[s];
+					cv::Point2f ep = person_kps.landmarks.points[e];
+					int color_id = link_color_idxs[i];
+					cv::line(image, cv::Point2f(sp.x * scale, sp.y * scale),
+						cv::Point2f(ep.x * scale, ep.y * scale),
+						cv::Scalar(_lcolor[color_id][0], _lcolor[color_id][1], _lcolor[color_id][2]), 1, cv::LINE_AA);
+				}
+			}
+			for (size_t i = 0; i < person_kps.landmarks.points.size(); i++)
+			{
+				if (show_point[i] > 0)
+				{
+					int color_id = point_color_idxs[i];
+					cv::circle(image, cv::Point2f(person_kps.landmarks.points[i].x * scale, person_kps.landmarks.points[i].y * scale), 1,
+						cv::Scalar(_pcolor[color_id][0], _pcolor[color_id][1], _pcolor[color_id][2]), 2, cv::LINE_AA);
+				}
+
+			}
+		}
+	}
+	else
+	{
+	std::string msg = "pose_num_joints must be 136 or 36, but got ";
+	msg += std::to_string(pose_num_joints);
+	throw std::range_error(msg);
+	}
 
 }

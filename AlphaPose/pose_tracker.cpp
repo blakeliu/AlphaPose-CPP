@@ -48,24 +48,6 @@ int track(int argc, char* argv[]) {
 		return 0;
 	}
 
-	//// create pose tracker pipeline
-	//mmdeploy::PoseTracker tracker(mmdeploy::Model(detector_weight_path), mmdeploy::Model(pose_weight_path),
-	//	mmdeploy::Device{ "cpu"});
-
-	//mmdeploy::PoseTracker::Params params;
-	//// initialize tracker params with program arguments
-	//InitTrackerParams(params);
-
-	//// create a tracker state for each video
-	//mmdeploy::PoseTracker::State state = tracker.CreateState(params);
-
-	//utils::mediaio::Input input(std::to_string(cam_id), 0);
-	//utils::mediaio::Output output(std::string(""), 1);
-
-	//utils::Visualize v(0);
-	//v.set_background("default");
-	//v.set_skeleton(utils::Skeleton::get("coco-wholebody"));
-
 	std::unique_ptr<alpha::AlphaPose> pose_tracker = std::make_unique<alpha::AlphaPose>(
 		detector_weight_path,
 		pose_weight_path,
@@ -91,13 +73,9 @@ int track(int argc, char* argv[]) {
 					break;
 				std::vector<types::BoxfWithLandmarks> person_kps;
 				auto infer_t = utils::Timer();
-				pose_tracker->detect(frame, person_kps);
+				pose_tracker->detect(frame, person_kps, pose_num_joints);
 				int fps = int(1.0f / infer_t.count());
-
-				if (person_kps.size() > 0)
-				{
-					pose_tracker->show(person_kps, frame, pose_num_joints, det_nms_threshold);
-				}
+				pose_tracker->show(person_kps, frame, pose_num_joints, det_nms_threshold);
 				cv::putText(frame, std::to_string(fps), cv::Point(50, 50), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 255), 1);
 				cv::imshow("cap", frame);
 				int c = cv::waitKey(10);
