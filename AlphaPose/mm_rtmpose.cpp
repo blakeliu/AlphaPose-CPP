@@ -112,6 +112,8 @@ void alpha::MMRTMPose::detect(const cv::Mat& image, std::vector<types::Boxf>& de
 #endif // ENABLE_DEBUG_STRING
 
 			types::Landmarks pose_lds;
+			pose_lds.scores.clear();
+
 			for (size_t k = 0; k < res[0].length; k++)
 			{
 

@@ -19,7 +19,7 @@ int cli(int argc, char* argv[]) {
 	unsigned int pose_num_threads = 4;
 	int warmup_count = 1;
 	int cam_id = -1;
-	float detector_score_threshold = 0.25f;
+	float detector_score_threshold = 0.45f;
 	float detector_iou_threshold = 0.45;
 	//float detector_score_threshold = 0.60f;
 	//float detector_iou_threshold = 0.60f;
@@ -89,7 +89,7 @@ int cli(int argc, char* argv[]) {
 	alpha_pose_model->warm_up(warmup_count);
 	std::cout << "RTMPose model load and init time: " << init_t.count() << std::endl;
 
-	if (cam_id > 0)
+	if (cam_id >= 0)
 	{
 		cv::VideoCapture cap;
 		cap.open(cam_id);
@@ -135,8 +135,8 @@ int cli(int argc, char* argv[]) {
 	return 0;
 }
 
-int main(int argc, char* argv[]) {
-	std::cout << "Hello, RTMPose!" << std::endl;
-	cli(argc, argv);
-	return 0;
-}
+//int main(int argc, char* argv[]) {
+//	std::cout << "Hello, RTMPose!" << std::endl;
+//	cli(argc, argv);
+//	return 0;
+//}

@@ -42,6 +42,9 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="alphapose.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers.h">
@@ -90,6 +93,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="argparse.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="alphapose.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -290,6 +290,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="alphapose.cpp" />
     <ClCompile Include="rtmpose.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mm_rtmpose.cpp" />
@@ -301,6 +302,7 @@
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="alphapose.h" />
     <ClInclude Include="rtmpose.h" />
     <ClInclude Include="argparse.h" />
     <ClInclude Include="clipp.h" />
