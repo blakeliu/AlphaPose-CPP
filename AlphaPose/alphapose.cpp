@@ -73,7 +73,7 @@ void alpha::AlphaPose::detect(cv::Mat& image, std::vector<types::BoxfWithLandmar
 		types::BoxfWithLandmarks person_box_ld;
 		types::Boxf box;
 		box.x1 = target.bbox.left;
-		box.y1 = target.bbox.bottom;
+		box.y1 = target.bbox.top;
 		box.x2 = target.bbox.right;
 		box.y2 = target.bbox.bottom;
 		box.score = 1;
